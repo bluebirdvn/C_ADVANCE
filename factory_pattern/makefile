@@ -6,7 +6,7 @@ SRC = main.c \
       temperature/temperature.c \
       pressure/pressure.c \
       light/light.c \
-      sensorFactory/sensor_factory.c
+      sensorFactory/sensorfactory.c
 
 OBJ = $(SRC:.c=.o)
 

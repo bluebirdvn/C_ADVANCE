@@ -1,4 +1,4 @@
-#include "sensor_factory.h"
+#include "sensorfactory.h"
 #include "../humidity/humidity.h"
 #include "../light/light.h"
 #include "../temperature/temperature.h"

@@ -1,5 +1,5 @@
-#ifndef _SENSOR_FACTORY_H
-#define _SENSOR_FACTORY_H
+#ifndef _SENSORFACTORY_H
+#define _SENSORFACTORY_H
 
 #include "sensor.h"
 
@@ -11,5 +11,6 @@ typedef enum {
 }SensorType;
 
 
+Sensor* createSensor(SensorType type);
 
 #endif
