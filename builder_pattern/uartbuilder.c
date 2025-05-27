@@ -21,7 +21,7 @@ static UART_Builder* setParity(UART_Builder* builder, uint8_t parity) {
         return NULL;
     }
 
-    if (parity < 0 || parity > 2) {
+    if (parity > 2) {
         printf("Error: invalid parity.\n");
         return builder;
     }
@@ -30,7 +30,7 @@ static UART_Builder* setParity(UART_Builder* builder, uint8_t parity) {
     return builder;
 }
 
-static UART_Builder* setStopBits(UART_Builder* builder, uint8_t stopBits) {
+static UART_Builder* setStopBits(UART_Builder* builder, uint32_t stopBits) {
     if (builder == NULL) {
         return NULL;
     }
@@ -44,7 +44,7 @@ static UART_Builder* setStopBits(UART_Builder* builder, uint8_t stopBits) {
     return builder;
 }
 
-static UART_Builder* setDataBits(UART_Builder* builder, uint8_t dataBits) {
+static UART_Builder* setDataBits(UART_Builder* builder, uint32_t dataBits) {
     if (builder == NULL) {
         return NULL;
     }

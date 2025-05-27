@@ -1,24 +1,25 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "uartbuiler.h"
+#include "uartbuilder.h"
 
 int main() {
-    UART_Builder uartbuilder = UART_Builder_Init();
+    UART_Builder Auartbuilder = UART_Builder_Init();
     printf("Cấu hình UART Mặc định (sau khi Init):\n");
-    printf("  Baud Rate (mặc định): %lu\n", uartbuilder.config.baudrate);
-    printf("  Parity (mặc định): %u\n", uartbuilder.config.parity);
-    printf("  Stop Bits (mặc định): %u\n", uartbuilder.config.stopBits);
-    printf("  Data Bits (mặc định): %u\n\n", uartbuilder.config.dataBits);
+    printf("  Baud Rate (mặc định): %u\n", Auartbuilder.config.baudrate);
+    printf("  Parity (mặc định): %u\n", Auartbuilder.config.parity);
+    printf("  Stop Bits (mặc định): %u\n", Auartbuilder.config.stopBits);
+    printf("  Data Bits (mặc định): %u\n\n", Auartbuilder.config.dataBits);
 
-    UART_config_t final_config = uartbuilder.setBaudrate(&uartbuilder, 11500)
-    ->setDataBits(&uartbuilder, 8)
-    ->setParity(&uartbuilder, 0)
-    ->setStopBits(&uartbuilder, 1)
-    ->build(&uartbuilder);
+    UART_config_t* final_config = 
+       Auartbuilder.setBaudrate(&Auartbuilder, 115200)
+               ->setDataBits(&Auartbuilder, 8)
+               ->setParity(&Auartbuilder, 0)
+               ->setStopBits(&Auartbuilder, 1)
+               ->build(&Auartbuilder);;
 
-    if (final_config) {
+    if (final_config->baudrate!=0) {
         printf("Cấu hình UART Cuối cùng:\n");
-        printf("  Baud Rate: %lu\n", final_config->baudrate);
+        printf("  Baud Rate: %u\n", final_config->baudrate);
         printf("  Parity: %u (0:None, 1:Odd, 2:Even)\n", final_config->parity);
         printf("  Stop Bits: %u\n", final_config->stopBits);
         printf("  Data Bits: %u\n", final_config->dataBits);
