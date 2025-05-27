@@ -1,5 +1,5 @@
 #include "temperature.h"
-
+#include <stdio.h>
 void temperatureSensorInit() {
     printf("Temperature Sensor init.\n");
 }
@@ -9,7 +9,7 @@ float temperatureSensorReadData() {
 }
 
 Sensor createTemperatureSensor() {
-    Sensor *temperatureSensor;
+    Sensor temperatureSensor;
     temperatureSensor.init = temperatureSensorInit;
     temperatureSensor.readData = temperatureSensorReadData;
     return temperatureSensor;

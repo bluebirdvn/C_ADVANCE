@@ -2,7 +2,7 @@
 #include "light.h"
 
 void lightSensorInit() {
-    printf("Humidity sensor init.\n");
+    printf("Light sensor init.\n");
 }
 
 

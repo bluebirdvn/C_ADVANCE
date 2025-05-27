@@ -5,6 +5,8 @@
 #include "../pressure/pressure.h"
 
 
+#include <stdlib.h>
+
 Sensor* createSensor(SensorType type) {
     Sensor* sensor = (Sensor*)malloc(sizeof(Sensor));
     if (sensor == NULL) {
