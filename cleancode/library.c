@@ -3,14 +3,14 @@
 #include <string.h>
 
 
-void init_library(Library *library){
-    if(library == NULL){
+void init_library(Library *library) {
+    if (library == NULL) {
         return;
     }
     library->book_count = 0;
     library->user_count = 0;
-    library->nex_book_id = 2000;
-    library->next_user_id = 1000;
+    library->nex_book_id = 0;
+    library->next_user_id = 0;
 
 }
 
