@@ -11,10 +11,10 @@ int main() {
     printf("  Data Bits (mặc định): %u\n\n", Auartbuilder.config.dataBits);
 
     UART_config_t* final_config = 
-       Auartbuilder.setBaudrate(&Auartbuilder, 115200)
-               ->setDataBits(&Auartbuilder, 8)
-               ->setParity(&Auartbuilder, 0)
-               ->setStopBits(&Auartbuilder, 1)
+       Auartbuilder.setBaudrate(&Auartbuilder, BAUDRATE_9600)
+               ->setDataBits(&Auartbuilder, DATA_BITS_8)
+               ->setParity(&Auartbuilder, EVEN)
+               ->setStopBits(&Auartbuilder, STOP_BIT_1)
                ->build(&Auartbuilder);;
 
     if (final_config->baudrate!=0) {

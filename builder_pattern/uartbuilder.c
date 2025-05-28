@@ -16,7 +16,7 @@ static UART_Builder* setBaudrate(UART_Builder* builder, uint32_t baudrate) {
     return builder;
 }
 
-static UART_Builder* setParity(UART_Builder* builder, uint8_t parity) {
+static UART_Builder* setParity(UART_Builder* builder, Parity parity) {
     if (builder == NULL) {
         return NULL;
     }
@@ -30,7 +30,7 @@ static UART_Builder* setParity(UART_Builder* builder, uint8_t parity) {
     return builder;
 }
 
-static UART_Builder* setStopBits(UART_Builder* builder, uint32_t stopBits) {
+static UART_Builder* setStopBits(UART_Builder* builder, StopBits stopBits) {
     if (builder == NULL) {
         return NULL;
     }
@@ -44,7 +44,7 @@ static UART_Builder* setStopBits(UART_Builder* builder, uint32_t stopBits) {
     return builder;
 }
 
-static UART_Builder* setDataBits(UART_Builder* builder, uint32_t dataBits) {
+static UART_Builder* setDataBits(UART_Builder* builder, DataBits dataBits) {
     if (builder == NULL) {
         return NULL;
     }
@@ -68,11 +68,11 @@ static UART_config_t* build(UART_Builder* builder) {
 
 UART_Builder UART_Builder_Init(void) {
     UART_Builder builder;
-
-    builder.config.baudrate = 9600;
-    builder.config.parity = 0;
-    builder.config.dataBits = 8;
-    builder.config.stopBits = 1;
+    
+    builder.config.baudrate = BAUDRATE_9600;
+    builder.config.parity = NONE;
+    builder.config.dataBits = DATA_BITS_8;
+    builder.config.stopBits = STOP_BIT_1;
 
     builder.setBaudrate = setBaudrate;
     builder.setDataBits = setDataBits;

@@ -14,33 +14,35 @@ void init_library(Library *library) {
 
 }
 
-int add_book_to_library(Library *library, const char *title, const char *author){
-    if(library == NULL){
+int add_book_to_library(Library *library, const char *title, const char *author) {
+    if (library == NULL) {
         return CODE_ERROR_GENERIC;
     }
-    if( title == NULL || author == NULL || strlen(title) == 0 || strlen(author) == 0){
+    if ( title == NULL || author == NULL || strlen(title) == 0 || strlen(author) == 0) {
         return CODE_ERROR_INVALID_INPUT;
     }
-    if(library->book_count >= MAX_BOOKS){
+    if (library->book_count >= MAX_BOOKS) {
         return CODE_ERROR_CAPACITY_FULL;
     }
     BookManagement *new_book = &library->books[library->book_count];
     init_book(new_book, library->nex_book_id, title, author);
+
     library->book_count++;
     library->nex_book_id++;
+
     return CODE_SUCCESS;
 }
 
 
 
-int add_user_to_library(Library *library, const char *name){
-    if(library == NULL){
+int add_user_to_library(Library *library, const char *name) {
+    if (library == NULL) {
         return CODE_ERROR_GENERIC;       
     }
-    if(name == NULL || strlen(name) == 0){
+    if (name == NULL || strlen(name) == 0) {
         return CODE_ERROR_INVALID_INPUT;
     }
-    if ( library->user_count > MAX_USERS ){
+    if (library->user_count > MAX_USERS) {
         return CODE_ERROR_CAPACITY_FULL;
     }
     
@@ -55,12 +57,12 @@ int add_user_to_library(Library *library, const char *name){
 
 
 
-BookManagement* find_book_by_id(Library *library, int book_id){
-    if(library == NULL){
+BookManagement* find_book_by_id(Library *library, int book_id) {
+    if (library == NULL) {
         return NULL;
     }
-    for(int i=0; i < library->book_count; i++){
-        if( library->books[i].id == book_id ){
+    for (int i=0; i < library->book_count; i++) {
+        if( library->books[i].id == book_id ) { 
             return &library->books[i];
         }
     }
@@ -69,11 +71,12 @@ BookManagement* find_book_by_id(Library *library, int book_id){
 
 void display_available_books (const Library *library) {
 
-    if (library == NULL){
+    if (library == NULL) {
         printf("Error: library infomation is not valid");
         return;
     }
     printf("\n---- List available book in library ----\n");
+
     int available_book = 0;
     if (library->book_count == 0) {
         printf("Library has not yet book");
@@ -94,7 +97,7 @@ void display_available_books (const Library *library) {
     printf("-----------------------------------------\n");
 }
 
-UserManagement* find_user_by_id(Library *library, int user_id){
+UserManagement* find_user_by_id(Library *library, int user_id) {
     if (library == NULL) {
         printf("Error: library infomation is not valid");
         return NULL;
@@ -109,7 +112,7 @@ UserManagement* find_user_by_id(Library *library, int user_id){
     
 }
 
-void display_all_users_and_borrowed_books(const Library *library){
+void display_all_users_and_borrowed_books(const Library *library) {
     if (library == NULL) {
         printf("Error: library infomation is not valid");
         return;
@@ -121,7 +124,8 @@ void display_all_users_and_borrowed_books(const Library *library){
         return;
     }
 
-    for (int i = 0; i < library->user_count; ++i){
+    for (int i = 0; i < library->user_count; ++i) {
+
         const UserManagement *user = &library->users[i];
         printf("====================================\n");
         printf("ID Nguoi dung: %d\n", user->id);
@@ -131,8 +135,11 @@ void display_all_users_and_borrowed_books(const Library *library){
         if (user->borrowed_count > 0) {
             printf("Chi tiet sach da muon:\n");
             for (int j = 0; j < user->borrowed_count; ++j) {
+
                 int borrowed_book_id = user->borrowed_book_ids[j];
+
                 BookManagement *borrowed_book = find_book_by_id((Library*)library, borrowed_book_id);
+
                 if (borrowed_book) {
                     printf("  - ID: %d, Tieu de: %s\n", borrowed_book->id, borrowed_book->title);
                 } else {
@@ -146,7 +153,7 @@ void display_all_users_and_borrowed_books(const Library *library){
 }
 
 
-int borrow_book_from_library(Library *library, int user_id, int book_id){
+int borrow_book_from_library(Library *library, int user_id, int book_id) {
     if (library == NULL) {
         return CODE_ERROR_GENERIC;
     }
@@ -173,14 +180,13 @@ int borrow_book_from_library(Library *library, int user_id, int book_id){
     }
 
     book->status = BOOK_STATUS_BORROWED;
-    user->borrowed_book_ids[user->borrowed_count] = book_id;
-    user->borrowed_count++;
+    user->borrowed_book_ids[user->borrowed_count++] = book_id;
 
     return CODE_SUCCESS;
 
 }
 
-int return_book_to_library(Library *library, int user_id, int book_id){
+int return_book_to_library (Library *library, int user_id, int book_id) {
     if (library == NULL) {
         return CODE_ERROR_GENERIC;
     }
@@ -215,41 +221,61 @@ int return_book_to_library(Library *library, int user_id, int book_id){
 
     book->status = BOOK_STATUS_AVAILABLE;
 
-    for (int i = found_borrowed_index; i < user->borrowed_count - 1; ++i){
+    for (int i = found_borrowed_index; i < user->borrowed_count - 1; ++i) {
         user->borrowed_book_ids[i] = user->borrowed_book_ids[i+1];
 
     }
 
     user->borrowed_count--;
+
     return CODE_SUCCESS;
 }
 
-int edit_book_in_library(Library *library, int book_id, const char *new_title, const char *new_author) {
+int edit_book_in_library (Library *library, int book_id, const char *new_title, const char *new_author) {
     if (library == NULL) {
         return CODE_ERROR_GENERIC;
     }
 
     BookManagement *book_to_edit = find_book_by_id(library, book_id);
+
     if (book_to_edit == NULL) {
         return CODE_ERROR_NOT_FOUND;
     }
-
+    /*
+    * Bien changed la co de check xem co thay doi thanh cong khong
+    */
     int changed = 0;
+    /*
+    * Kiem tra tieu de moi co hop le khong
+    * Thay doi tieu de sach
+    */
     if (new_title != NULL && strlen(new_title) > 0) {
         if (strlen(new_title) >= BOOK_TITLE_LENGTH) return CODE_ERROR_INVALID_INPUT;
+
         strncpy(book_to_edit->title, new_title, BOOK_TITLE_LENGTH - 1);
+
         book_to_edit->title[BOOK_TITLE_LENGTH - 1] = '\0';
+
         changed = 1;
     }
 
+    /*
+    * Kiem tra ten tac gia moi co hop le khong
+    * Thay doi ten tac gia
+    */
     if (new_author != NULL && strlen(new_author) > 0) {
         if (strlen(new_author) >= AUTHOR_NAME_LENGTH) return CODE_ERROR_INVALID_INPUT;
+
+        strncpy(book_to_edit->author, new_author, AUTHOR_NAME_LENGTH - 1);
+
         book_to_edit->author[AUTHOR_NAME_LENGTH - 1] = '\0';
+
         changed = 1;
     }
     
     return changed ? CODE_SUCCESS : CODE_ERROR_GENERIC;
 }
+
 
 int delete_book_from_library(Library *library, int book_id){
     if (library == NULL) {
@@ -257,6 +283,9 @@ int delete_book_from_library(Library *library, int book_id){
     }
 
     int book_index = -1;
+    /*
+    * tra ve chi so cua sach can xoa
+    */
     for (int i = 0; i < library->book_count; ++i) {
         if (library->books[i].id == book_id) {
             book_index = i;
@@ -264,10 +293,13 @@ int delete_book_from_library(Library *library, int book_id){
         }
     }
 
-    if (book_id == -1) {
+    if (book_index == -1) {
         return CODE_ERROR_NOT_FOUND;
     }
 
+    /*
+    * Kiem tra id sach xem co dang duoc muon khong
+    */
     if (library->books[book_index].status == BOOK_STATUS_BORROWED) {
         return CODE_ERROR_BOOK_BORROWED;
     }
@@ -281,21 +313,25 @@ int delete_book_from_library(Library *library, int book_id){
     return CODE_SUCCESS;
 }
 
-void find_book_by_title_substring(const Library *library, const char *query_title, BookManagement* found_books[], int max_results, int *count_found) {
+void find_book_by_title_substring (const Library *library, const char *query_title, BookManagement* found_books[], int max_results, int *count_found) {
+
     if (library == NULL || query_title == NULL || found_books == NULL || count_found == NULL) {
         if (count_found) *count_found = 0;
         return;
     }
 
     *count_found = 0;
+
     if (strlen(query_title) == 0) return; 
 
     for (int i = 0; i < library->book_count; ++i) {
         
         if (strstr(library->books[i].title, query_title) != NULL) {
+
             if (*count_found < max_results) {
                 
                 found_books[*count_found] = (BookManagement*)&library->books[i];
+
                 (*count_found)++;
             } else {
                 break;
@@ -304,9 +340,12 @@ void find_book_by_title_substring(const Library *library, const char *query_titl
     }
 }
 
-void find_book_by_author_substring(const Library *library, const char *query_author, BookManagement* found_books[], int max_results, int *count_found) {
+void find_book_by_author_substring (const Library *library, const char *query_author, BookManagement* found_books[], int max_results, int *count_found) {
+
     if (library == NULL || query_author == NULL || found_books == NULL || count_found == NULL) {
+
         if (count_found) *count_found = 0;
+
         return;
     }
 
@@ -314,10 +353,15 @@ void find_book_by_author_substring(const Library *library, const char *query_aut
     if (strlen(query_author) == 0) return;
 
     for (int i = 0; i < library->book_count; ++i) {
+
         if (strstr(library->books[i].author, query_author) != NULL) {
+
             if (*count_found < max_results) {
+
                 found_books[*count_found] = (BookManagement*)&library->books[i];
+
                 (*count_found)++;
+
             } else {
                 break;
             }
@@ -328,27 +372,34 @@ void find_book_by_author_substring(const Library *library, const char *query_aut
 
 
 
-int edit_user_in_library(Library *library, int user_id, const char *new_name) {
+int edit_user_in_library (Library *library, int user_id, const char *new_name) {
     if (library == NULL) {
         return CODE_ERROR_GENERIC;
     }
 
     UserManagement *user_to_edit = find_user_by_id(library, user_id);
+
     if (user_to_edit == NULL) {
         return CODE_ERROR_NOT_FOUND;
     }
 
     if (new_name != NULL && strlen(new_name) > 0) {
-        if (strlen(new_name) >= USER_NAME_LENGTH) return CODE_ERROR_INVALID_INPUT; // Quá dài
+
+        if (strlen(new_name) >= USER_NAME_LENGTH) return CODE_ERROR_INVALID_INPUT; 
+
         strncpy(user_to_edit->name, new_name, USER_NAME_LENGTH - 1);
+
         user_to_edit->name[USER_NAME_LENGTH - 1] = '\0';
+
         return CODE_SUCCESS;
     }
     return CODE_ERROR_INVALID_INPUT;
 }
 
-int delete_user_from_library(Library *library, int user_id) {
+int delete_user_from_library (Library *library, int user_id) {
+
     if (library == NULL) {
+
         return CODE_ERROR_GENERIC;
     }
 
@@ -373,6 +424,7 @@ int delete_user_from_library(Library *library, int user_id) {
     }
 
     library->user_count--;
+    
     return CODE_SUCCESS;
 }
 

@@ -8,11 +8,11 @@
 #define MAX_DATA_STRING 256
 
 char collecttedDataBuffer[MAX_DATA_STRING*10];
-typedef struct{
+typedef struct {
     int id;
-}SensorNode;
+} SensorNode;
 
-int getData(SensorNode* node){
+int getData (SensorNode* node) { 
     if(node == NULL){
         return -1;
     }
@@ -20,7 +20,7 @@ int getData(SensorNode* node){
 }
 typedef struct SensorManagerINS SensorManager;
 
-struct SensorManagerINS{
+struct SensorManagerINS {
     SensorNode* sensors[MAX_NODESENSOR];
     int sensors_count;
     char internalDataBuffer[MAX_DATA_STRING*10];
@@ -29,16 +29,17 @@ struct SensorManagerINS{
     void (*addSensor)(SensorManager* self, SensorNode* sensor);
 };
 
+
 static SensorManager* SensorManagerInstance = NULL;
 
 
 
-void addSensorImplement(SensorManager* self, SensorNode* sensor){
+void addSensorImplement (SensorManager* self, SensorNode* sensor) {
     if (self == NULL || sensor == NULL) {
         fprintf(stderr, "Error: SensorManager of SensorNode is NULL");
         return;
     }
-    if(self->sensors_count < MAX_NODESENSOR) {
+    if (self->sensors_count < MAX_NODESENSOR) {
         self->sensors[self->sensors_count++] = sensor;
         printf("SensorNode %d added to SensorManager.\n", sensor->id);
 
@@ -47,7 +48,7 @@ void addSensorImplement(SensorManager* self, SensorNode* sensor){
     }
 }
 
-int collectDataToBufferImplement(SensorManager *self){
+int collectDataToBufferImplement (SensorManager *self) {
     if (self == NULL) {
         fprintf(stderr, "Error: SensorManager is NULL for collectDataToBuffer.\n");
         return -1;
@@ -59,14 +60,19 @@ int collectDataToBufferImplement(SensorManager *self){
         self->internalDataBuffer[0]='\0';
         return -1;
     }
+
     self->internalDataBuffer[0]='\0';
     char temp[MAX_DATA_STRING];
-
+    /*
+    * Ghi dau thoi gian vao buffer
+    */
     time_t now = time(NULL);
     struct tm *tm_info = localtime(&now);
     strftime(temp, sizeof(temp), "Data collect at: %Y-%m-%d %H:%M:%S\n", tm_info);
     strcat(self->internalDataBuffer, temp);
-
+    /*
+    * Ghi data vao internal buffer
+    */
     int dataColectCount = 0;
     for (int i = 0; i< self->sensors_count; ++i) {
         if (self->sensors[i] != NULL) {
@@ -81,7 +87,7 @@ int collectDataToBufferImplement(SensorManager *self){
     return dataColectCount;
 }
 
-void pushBufferToStorageImplement(SensorManager* self, const char* filename){
+void pushBufferToStorageImplement(SensorManager* self, const char* filename) {
     if (self == NULL) {
         fprintf(stderr, "Error: SensorManger is NULL for pushBufferToStorge.\n");
         return;
@@ -92,6 +98,7 @@ void pushBufferToStorageImplement(SensorManager* self, const char* filename){
     }
 
     FILE* file = fopen(filename, "a");
+
     if (file == NULL) {
         perror("Error opening data file to push data");
         return;
@@ -102,20 +109,25 @@ void pushBufferToStorageImplement(SensorManager* self, const char* filename){
     printf("Data has been pushed to file %s\n", filename);
 }
 
-static void initSensorManager(SensorManager *sensorManager){
+static void initSensorManager(SensorManager *sensorManager) {
     sensorManager->sensors_count = 0;
     for (int i = 0; i < MAX_NODESENSOR; ++i) {
         sensorManager->sensors[i] = NULL;
     }
+    /*
+    * Xoa buffer
+    */
     sensorManager->internalDataBuffer[0] = '\0';
 
     sensorManager->collectData = collectDataToBufferImplement;
     sensorManager->pushData = pushBufferToStorageImplement;
     sensorManager->addSensor = addSensorImplement;
+
     printf("SensorManager instace created and init.\n");
 }
 
-SensorManager* SensorManagerGetInstance(){
+SensorManager* SensorManagerGetInstance() {
+
     if (SensorManagerInstance == NULL) {
         SensorManagerInstance = (SensorManager*)malloc(sizeof(SensorManager));
         
@@ -164,11 +176,11 @@ int main() {
         }
     }
 
-if (sensorM1->pushData) {
-    sensorM1->pushData(sensorM1, data_file);
-}
+    if (sensorM1->pushData) {
+        sensorM1->pushData(sensorM1, data_file);
+    }
 
-printf("\n--- Collecting and pushing again ---\n");
+    printf("\n--- Collecting and pushing again ---\n");
     if (sensorM1->collectData) {
         sensorM1->collectData(sensorM1);
     }
@@ -176,8 +188,8 @@ printf("\n--- Collecting and pushing again ---\n");
         sensorM1->pushData(sensorM1, data_file);
     }
 
-destroySensorManagerInstance();
+    destroySensorManagerInstance();
 
-printf("\nProgram finshed.\n");
-return 0;
+    printf("\nProgram finshed.\n");
+    return 0;
 }
