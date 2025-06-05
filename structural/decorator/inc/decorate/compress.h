@@ -9,4 +9,5 @@ int compressSend(void *instace, uint8_t *data, size_t length);
 int decompressReceive(void *instance, uint8_t *buffer, size_t lengthbuffer, size_t *receivedlength);
 
 CommonChannel *createCompress(CommonChannel *base);
+void destroyCompress(CommonChannel *channel);
 #endif
