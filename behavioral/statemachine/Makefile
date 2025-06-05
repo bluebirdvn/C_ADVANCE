@@ -1,33 +1,44 @@
+# Trình biên dịch và cờ biên dịch
 CC = gcc
-CFLAGS = -Wall -Wextra -std=c11 -g
+CFLAGS = -Wall -Iinc -Iinc/state
+
+# Thư mục
+SRC_DIR = src
+OBJ_DIR = obj
+BIN_DIR = bin
+
+# Các file nguồn
+SRC = $(wildcard $(SRC_DIR)/*.c) \
+      $(wildcard $(SRC_DIR)/state/*.c)
 
 # Tên file thực thi
-TARGET = musicplayer
+TARGET = $(BIN_DIR)/musicplayer
 
-# Danh sách các file nguồn
-SRCS = main.c \
-       musicplayer.c \
-       playingstate.c \
-       pausingstate.c \
-       stoppingstate.c
-
-# Tạo danh sách file object tương ứng
-OBJS = $(SRCS:.c=.o)
+# Chuyển các file .c thành .o tương ứng trong obj/
+OBJ = $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(SRC))
 
 # Luật mặc định
 all: $(TARGET)
 
-# Link các object để tạo file thực thi
-$(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) -o $@ $^
+# Tạo file thực thi từ object và main.c
+$(TARGET): $(OBJ) main.c | $(BIN_DIR)
+	$(CC) $(CFLAGS) -c main.c -o $(OBJ_DIR)/main.o
+	$(CC) $(CFLAGS) $(OBJ) $(OBJ_DIR)/main.o -o $@
 
-# Biên dịch từng file .c thành .o
-%.o: %.c
+# Compile các file .c thành .o
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(OBJ_DIR)
+	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Dọn dẹp các file build
-clean:
-	rm -f $(OBJS) $(TARGET)
+# Tạo thư mục nếu chưa có
+$(BIN_DIR):
+	mkdir -p $(BIN_DIR)
 
-# Tùy chọn tiện lợi
+$(OBJ_DIR):
+	mkdir -p $(OBJ_DIR)
+
+# Clean các file build
+clean:
+	rm -rf $(OBJ_DIR) $(BIN_DIR)
+
 .PHONY: all clean
