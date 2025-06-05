@@ -1,0 +1,20 @@
+{
+    "idf.pythonInstallPath": "/usr/bin/python",
+    "files.associations": {
+        "compare": "cpp",
+        "commonchannnel.h": "c",
+        "security.h": "c",
+        "smartlight.h": "c",
+        "hvac.h": "c",
+        "mobiapp.h": "c",
+        "subcriber.h": "c",
+        "door.h": "c",
+        "smoke.h": "c",
+        "motion.h": "c",
+        "temperature.h": "c",
+        "waterleak.h": "c",
+        "subscriber.h": "c",
+        "stdlib.h": "c",
+        "stoppingstate.h": "c"
+    }
+}

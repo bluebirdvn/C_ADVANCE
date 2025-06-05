@@ -8,7 +8,8 @@
 #define AUTHOR_NAME_LENGTH 100
 #define USER_NAME_LENGTH 100
 #define MAX_BOOK_BORROW 100
-typedef enum{
+
+typedef enum {
 	BOOK_STATUS_AVAILABLE,
 	BOOK_STATUS_BORROWED
 } BookStatus;

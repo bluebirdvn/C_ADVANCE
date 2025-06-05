@@ -2,12 +2,12 @@
 #define _USERMANAGEMENT_H
 #include "libdefines.h"
 
-typedef struct{
+typedef struc {
 	int id;
 	char name[USER_NAME_LENGTH];
 	int borrowed_book_ids[MAX_BOOK_BORROW];
 	int borrowed_count;
-}UserManagement;
+} UserManagement;
 
 void init_user(UserManagement *user, int id, const char *name);
 

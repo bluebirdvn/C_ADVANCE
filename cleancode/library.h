@@ -4,7 +4,7 @@
 #include "usermanagement.h"
 #include "libdefines.h"
 
-typedef struct{
+typedef struct {
 	BookManagement books[MAX_BOOKS];
 	int book_count;
 	int nex_book_id;
