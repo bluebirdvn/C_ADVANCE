@@ -3,7 +3,7 @@ CFLAGS = -Wall -Werror -Wextra -Iinc -fPIC
 AR = ar
 ARFLAGS = rcs
 
-#Dicrectories
+
 CUR_DIR = .
 BIN_DIR = $(CUR_DIR)/bin
 INC_DIR = $(CUR_DIR)/inc
@@ -41,7 +41,6 @@ $(STATICLIB): $(OBJS)
 $(SHAREDLIB): $(OBJS)
 	@mkdir -p $(SHAREDLIB_DIR)
 	$(CC) -shared -o $@ $^
-#executalbe static_lib
 
 $(TARGET_STATIC): $(STATICLIB) $(MAIN)
 	@mkdir -p $(BIN_DIR)

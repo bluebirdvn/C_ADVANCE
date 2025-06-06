@@ -39,7 +39,7 @@ int main() {
         return 1;
     }
     printf("--- Sending Data ---\n");
-    uint8_t original_data[] = {1, 1, 1, 2, 3, 3, 3, 3, 4, 5, 5, 5, 5, 5, 5, 6, 7, 8, 9, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 11};
+    uint8_t original_data[] = {11, 45, 76, 77, 33, 76, 234, 255, 189, 111};
     size_t original_length = sizeof(original_data);
     int send_status = crccheck->send(crccheck->instance, original_data, original_length);
     if (send_status == CODE_SUCCESS) {
@@ -54,17 +54,17 @@ int main() {
     size_t received_actual_length = 0;
 
     printf("Attempting to receive data from the decorated channel...\n");
-    // Receive data from the top-most decorator (crcChannel)
+  
     int receive_status = crccheck->received(crccheck->instance, received_data_buffer, sizeof(received_data_buffer), &received_actual_length);
 
     if (receive_status == CODE_SUCCESS) {
-        printf("Data received successfully (actual length: %zu bytes): ", received_actual_length);
+        printf("Data received successfully (actual length: %zu bytes): \n", received_actual_length);
         for (size_t i = 0; i < received_actual_length; i++) {
             printf("%d ", received_data_buffer[i]);
         }
         printf("\n");
 
-        // Verify if received data matches original data
+       
         if (received_actual_length == original_length && memcmp(original_data, received_data_buffer, original_length) == 0) {
             printf("Verification: Received data matches original data. Success!\n");
         } else {
@@ -75,14 +75,13 @@ int main() {
         fprintf(stderr, "Error receiving data: %d\n", receive_status);
     }
 
-    // --- Cleanup ---
     printf("\n--- Cleaning up allocated memory ---\n");
-    // Destroy decorators in reverse order of creation (top-most first)
-    destroyCrcCheck(crccheck); //
+    
+    destroyCrcCheck(crccheck); 
     printf("Destroyed CrcCheck decorator.\n");
-    destroyCompress(compress); //
+    destroyCompress(compress); 
     printf("Destroyed Compress decorator.\n");
-    destroyRawUartChannel(common); //
+    destroyRawUartChannel(common);
     printf("Destroyed RawUartChannel.\n");
 
     printf("\nSimulation finished.\n");
