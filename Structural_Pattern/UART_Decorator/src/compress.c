@@ -16,6 +16,9 @@ size_t rle_encode(const uint8_t* input, size_t len, uint8_t* output) {
     return outIdx;
 }
 size_t rle_decode(const uint8_t* input, size_t len, uint8_t* output) {
+    if (input == NULL || output == NULL) {
+        return CODE_ERROR;
+    }
     size_t outIdx = 0;
     for (size_t i = 0; i + 1 < len;) {
         uint8_t count = input[i++];
@@ -30,7 +33,9 @@ size_t rle_decode(const uint8_t* input, size_t len, uint8_t* output) {
 
 int compressSend(void *instance, uint8_t *data, size_t length) {
     DecorateChannel *Compress = (DecorateChannel*)instance;
+
     CommonChannel *common = Compress->base;
+    
     if (Compress == NULL || common == NULL) {
         return CODE_ERROR;
     }

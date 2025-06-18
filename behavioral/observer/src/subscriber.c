@@ -1,6 +1,7 @@
 #include "subscriber.h"
 #include <stdio.h>
 #include <string.h>
+
 void updateEvent(Subscriber *sub, const char *event) {
     printf("Event: %s", event);
 

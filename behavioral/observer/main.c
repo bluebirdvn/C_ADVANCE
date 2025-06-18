@@ -14,13 +14,18 @@ int main() {
     LightSensor light;
     LightSensorInit(&light);
     DoorSensor door;
+    
     DoorSensorInit(&door);
+
     SmokeSensor smoke;
     SmokeSensorInit(&smoke);
+
     WaterSensor water;
     WaterSensorInit(&water);
+
     MobiApp mobi;
     MobiAppInit(&mobi);
+
     light.base.subscribeToPub(&light.base, &mobi.base);
     door.base.subscribeToPub(&door.base, &mobi.base);
     smoke.base.subscribeToPub(&smoke.base, &mobi.base);

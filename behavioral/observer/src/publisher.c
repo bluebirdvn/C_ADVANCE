@@ -7,6 +7,7 @@ void notify(Publisher *pub, const char *event); // Declare notify
 
 void PublisherInit(Publisher *pub) {
     memset(pub, 0, sizeof(Publisher));
+
     pub->subscriberCount = 0;
     pub->subscribeToPub = Sub;
     pub->unSubscriberToPub = UnSub;
@@ -40,6 +41,7 @@ void UnSub(Publisher *pub, Subscriber *sub) {
 
 void notify(Publisher *pub, const char *event) {
     for (int i = 0; i < pub->subscriberCount; ++i) {
+
         pub->subscriber[i]->update(pub->subscriber[i], event);
     }
 }
