@@ -64,18 +64,18 @@ Hệ thống điều khiển bơm nước dựa trên dữ liệu độ ẩm t�
 
 ## 📁 Cấu Trúc Dự Án
 
-├── main.c # Vòng lặp chính điều phối toàn hệ thống
-├── config.h/.c # Cấu hình hệ thống, định nghĩa cấu trúc, hằng số
-├── publisher.h/.c # Giao diện và logic cho Publisher
-├── subscriber.h/.c # Giao diện và xử lý khi nhận dữ liệu
-├── sensor.h # Giao diện cảm biến chung
-├── moisture_sensor.h/.c# Cảm biến độ ẩm (Publisher)
-├── sensor_factory.h/.c # Factory tạo cảm biến
-├── pumping.h/.c # Điều khiển bơm + trạng thái LED (Subscriber)
-├── modeswitch.h/.c # Logic điều khiển AUTO và MANUAL
-├── button.h/.c # Mô phỏng nút nhấn chuyển chế độ / kích hoạt tưới
-├── log.h/.c # Hệ thống log với dấu thời gian
-└── README.md # Tài liệu dự án này
+├── main.c # Vòng lặp chính điều phối toàn hệ thống.
+├── config.h/.c # Cấu hình hệ thống, định nghĩa cấu trúc, hằng số.
+├── publisher.h/.c # Giao diện và logic cho Publisher.
+├── subscriber.h/.c # Giao diện và xử lý khi nhận dữ liệu.
+├── sensor.h # Giao diện cảm biến chung.
+├── moisture_sensor.h/.c# Cảm biến độ ẩm (Publisher).
+├── sensor_factory.h/.c # Factory tạo cảm biến.
+├── pumping.h/.c # Điều khiển bơm + trạng thái LED (Subscriber).
+├── modeswitch.h/.c # Logic điều khiển AUTO và MANUAL.
+├── button.h/.c # Mô phỏng nút nhấn chuyển chế độ / kích hoạt tưới.
+├── log.h/.c # Hệ thống log với dấu thời gian.
+└── README.md # Tài liệu dự án này.
 
 ---
 
@@ -106,36 +106,36 @@ Chạy file makefile.
 
 📤 Ví dụ Đầu ra Hệ thống
 
-[2025-06-18 17:05:01] [INFO]  --- Smart Plant Watering System Started ---
+[2025-06-18 17:05:01] [INFO]  --- Smart Plant Watering System Started ---.
 [2025-06-18 17:05:01] [INFO]  Moisture sensor object created successfully.
 [2025-06-18 17:05:01] [DEBUG] Publisher initialized.
 [2025-06-18 17:05:01] [INFO]  Moisture sensor init successful.
 [2025-06-18 17:05:01] [DEBUG] Subscriber initialized.
 [2025-06-18 17:05:01] [INFO]  Pumping system initialized.
-[2025-06-18 17:05:01] [INFO]  Subscriber added to Publisher. Current count: 1
+[2025-06-18 17:05:01] [INFO]  Subscriber added to Publisher. Current count: 1.
 [2025-06-18 17:05:01] [INFO]  Pumping subscribed to Moisture Sensor.
-[2025-06-18 17:05:01] [INFO]  [BUTTONS] Initialized. (Simulated input: 'a' for mode toggle, 'm' for manual water)
-[2025-06-18 17:05:01] [INFO]  Subscriber received event: MOISTURE=25
-[2025-06-18 17:05:01] [WARN]  [LED] State: LOW MOISTURE ALERT (Red), Moisture: 25% (Min: 30%)
-[2025-06-18 17:05:01] [AUTO MODE] Current moisture: 25%. Min: 30%, Max: 70%
+[2025-06-18 17:05:01] [INFO]  [BUTTONS] Initialized. (Simulated input: 'a' for mode toggle, 'm' for manual water).
+[2025-06-18 17:05:01] [INFO]  Subscriber received event: MOISTURE=25.
+[2025-06-18 17:05:01] [WARN]  [LED] State: LOW MOISTURE ALERT (Red), Moisture: 25% (Min: 30%).
+[2025-06-18 17:05:01] [AUTO MODE] Current moisture: 25%. Min: 30%, Max: 70%.
 [2025-06-18 17:05:01] [INFO]  [AUTO MODE] Moisture too low (25% < 30%), turning pump ON.
 [2025-06-18 17:05:01] [INFO]  Pump turned ON.
-[2025-06-18 17:05:01] [INFO]  [LED] State: WATERING (Yellow)
+[2025-06-18 17:05:01] [INFO]  [LED] State: WATERING (Yellow).
 
-Press 'a' for AUTO/MANUAL toggle, 'm' for MANUAL water: a
-[2025-06-18 17:05:07] [INFO]  [MODE] Switched to MANUAL
-[2025-06-18 17:05:07] [INFO]  [LED] State: WATERING (Yellow)
+Press 'a' for AUTO/MANUAL toggle, 'm' for MANUAL water: a.
+[2025-06-18 17:05:07] [INFO]  [MODE] Switched to MANUAL.
+[2025-06-18 17:05:07] [INFO]  [LED] State: WATERING (Yellow).
 
-Press 'a' for AUTO/MANUAL toggle, 'm' for MANUAL water: m
+Press 'a' for AUTO/MANUAL toggle, 'm' for MANUAL water: m.
 [2025-06-18 17:05:10] [INFO]  [MANUAL MODE] Activating manual watering for 10 seconds.
 [2025-06-18 17:05:10] [INFO]  Pump turned ON.
-[2025-06-18 17:05:10] [INFO]  [LED] State: WATERING (Yellow)
+[2025-06-18 17:05:10] [INFO]  [LED] State: WATERING (Yellow).
 
-Press 'a' for AUTO/MANUAL toggle, 'm' for MANUAL water: 
+Press 'a' for AUTO/MANUAL toggle, 'm' for MANUAL water: .
 [2025-06-18 17:05:20] [INFO]  [MANUAL MODE] Manual watering time (10 sec) elapsed, turning pump OFF.
 [2025-06-18 17:05:20] [INFO]  Pump turned OFF.
 [2025-06-18 17:05:20] [INFO]  [AUTO MODE] Pump just turned OFF, setting last auto watering completion time.
-[2025-06-18 17:05:20] [INFO]  [LED] State: NORMAL (Green)
+[2025-06-18 17:05:20] [INFO]  [LED] State: NORMAL (Green).
 
 📄 Giấy phép
 
