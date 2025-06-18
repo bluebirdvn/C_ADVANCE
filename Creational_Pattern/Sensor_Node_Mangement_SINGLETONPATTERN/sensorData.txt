@@ -1,0 +1,10 @@
+Data collect at: 2025-06-18 17:52:21
+Sensor ID 1: DATA = 1370
+Sensor ID 2: DATA = 2626
+Sensor ID 3: DATA = 3000
+-------------------------------
+Data collect at: 2025-06-18 17:52:21
+Sensor ID 1: DATA = 1875
+Sensor ID 2: DATA = 2121
+Sensor ID 3: DATA = 3387
+-------------------------------

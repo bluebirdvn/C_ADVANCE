@@ -63,6 +63,7 @@ Hệ thống điều khiển bơm nước dựa trên dữ liệu độ ẩm t�
 ---
 
 ## 📁 Cấu Trúc Dự Án
+<<<<<<< HEAD
 
 ├── main.c # Vòng lặp chính điều phối toàn hệ thống.
 ├── config.h/.c # Cấu hình hệ thống, định nghĩa cấu trúc, hằng số.
@@ -76,6 +77,21 @@ Hệ thống điều khiển bơm nước dựa trên dữ liệu độ ẩm t�
 ├── button.h/.c # Mô phỏng nút nhấn chuyển chế độ / kích hoạt tưới.
 ├── log.h/.c # Hệ thống log với dấu thời gian.
 └── README.md # Tài liệu dự án này.
+=======
+.
+├── main.c # Vòng lặp chính điều phối toàn hệ thống
+├── config.h/.c # Cấu hình hệ thống, định nghĩa cấu trúc, hằng số
+├── publisher.h/.c # Giao diện và logic cho Publisher
+├── subscriber.h/.c # Giao diện và xử lý khi nhận dữ liệu
+├── sensor.h # Giao diện cảm biến chung
+├── moisture_sensor.h/.c# Cảm biến độ ẩm (Publisher)
+├── sensor_factory.h/.c # Factory tạo cảm biến
+├── pumping.h/.c # Điều khiển bơm + trạng thái LED (Subscriber)
+├── modeswitch.h/.c # Logic điều khiển AUTO và MANUAL
+├── button.h/.c # Mô phỏng nút nhấn chuyển chế độ / kích hoạt tưới
+├── log.h/.c # Hệ thống log với dấu thời gian
+└── README.md # Tài liệu dự án này
+>>>>>>> 9763d40 (Ceational pattern)
 
 ---
 
@@ -105,8 +121,13 @@ Chạy file makefile.
     ⚠️ Lưu ý: vì là mô phỏng console, các lệnh scanf() hay getchar() sẽ chặn vòng lặp chính tạm thời. Trong hệ nhúng thực tế, cần dùng ngắt (interrupt) hoặc polling không chặn.
 
 📤 Ví dụ Đầu ra Hệ thống
+<<<<<<< HEAD
 
 [2025-06-18 17:05:01] [INFO]  --- Smart Plant Watering System Started ---.
+=======
+.
+[2025-06-18 17:05:01] [INFO]  --- Smart Plant Watering System Started ---
+>>>>>>> 9763d40 (Ceational pattern)
 [2025-06-18 17:05:01] [INFO]  Moisture sensor object created successfully.
 [2025-06-18 17:05:01] [DEBUG] Publisher initialized.
 [2025-06-18 17:05:01] [INFO]  Moisture sensor init successful.
