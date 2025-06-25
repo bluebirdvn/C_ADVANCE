@@ -1,0 +1,11 @@
+[2025-06-25 00:45:48] [NOTICE] [main.c:22]Chương trình logger đã khởi động.
+[2025-06-25 00:45:48] [INFO] [main.c:5]Đang thử kết nối tới cơ sở dữ liệu...
+[2025-06-25 00:45:48] [ERROR] [main.c:6]Kết nối thất bại: Không tìm thấy host 'db_server'.
+[2025-06-25 00:45:48] [DEBUG] [main.c:10]Bắt đầu xử lý dữ liệu người dùng.
+[2025-06-25 00:45:48] [DEBUG] [main.c:12]Đang xử lý bản ghi số 1.
+[2025-06-25 00:45:48] [DEBUG] [main.c:12]Đang xử lý bản ghi số 2.
+[2025-06-25 00:45:48] [DEBUG] [main.c:12]Đang xử lý bản ghi số 3.
+[2025-06-25 00:45:48] [INFO] [main.c:14]Xử lý dữ liệu thành công.
+[2025-06-25 00:45:48] [WARNING] [main.c:25]Không gian đĩa sắp đầy (còn lại 10%).
+[2025-06-25 00:45:48] [ERROR] [main.c:30]Chỉ có lỗi hoặc các mức nghiêm trọng hơn được hiển thị.
+[2025-06-25 00:45:48] [CRITICAL] [main.c:31]Đây là một lỗi nghiêm trọng!
