@@ -2,33 +2,43 @@
 #include <stdio.h>
 
 void connect_database() {
-	log_message(LOG_INFO, "Đang thử kết nối tới cơ sở dữ liệu...");
-	log_message(LOG_ERROR, "Kết nối thất bại: Không tìm thấy host 'db_server'.");
+	log_message(LOG_INFO, "Try connecting to Database...");
+	log_message(LOG_ERROR, "Failed connection: Did't find server.");
 }
 
 void process_data() {
-	log_message(LOG_DEBUG, "Bắt đầu xử lý dữ liệu người dùng.");
+	log_message(LOG_DEBUG, "Starting process user data.");
+
 	for (int i = 0; i < 3; i++) {
-		log_message(LOG_DEBUG, "Đang xử lý bản ghi số %d.", i + 1);
+		log_message(LOG_DEBUG, "Processing number: %d.", i + 1);
 	}
-	log_message(LOG_INFO, "Xử lý dữ liệu thành công.");
+	
+	log_message(LOG_INFO, "Processing data successfully.");
 }
 
 
 int main() {
 	if (logger_init("app.log", LOG_DEBUG) != 0) {
-		return 1; // Thoát nếu không khởi tạo được logger
+		return 1; 
 	}
-	log_message(LOG_NOTICE, "Chương trình logger đã khởi động.");
+
+	log_message(LOG_NOTICE, "Program's logger starts.");
+
 	connect_database();
 	process_data();
-	log_message(LOG_WARNING, "Không gian đĩa sắp đầy (còn lại 10%%).");
-	printf("\n--- THAY ĐỔI MỨC LOG SANG WARNING ---\n\n");
+
+	log_message(LOG_WARNING, "Space is not enough (remaining 10%%).");
+
+	printf("\n--- CHANGE LOG LEVEL TO WARNING ---\n\n");
+
 	log_set_level(LOG_WARNING);
-	log_message(LOG_INFO, "Thông điệp này sẽ KHÔNG được hiển thị.");
-	log_message(LOG_DEBUG, "Thông điệp gỡ lỗi này cũng sẽ KHÔNG được hiển thị.");
-	log_message(LOG_ERROR, "Chỉ có lỗi hoặc các mức nghiêm trọng hơn được hiển thị.");
-	log_message(LOG_CRITICAL, "Đây là một lỗi nghiêm trọng!");
+
+	log_message(LOG_INFO, "This message will not be displayed.");
+	log_message(LOG_DEBUG, "TThis message will not be displayed.");
+	log_message(LOG_ERROR, "This message will not be displayed.");
+	log_message(LOG_CRITICAL, "This is critical error!");
+
 	logger_clean();
-        return 0;
+
+    return 0;
 }

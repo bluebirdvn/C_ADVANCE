@@ -9,3 +9,14 @@
 [2025-06-25 00:45:48] [WARNING] [main.c:25]Không gian đĩa sắp đầy (còn lại 10%).
 [2025-06-25 00:45:48] [ERROR] [main.c:30]Chỉ có lỗi hoặc các mức nghiêm trọng hơn được hiển thị.
 [2025-06-25 00:45:48] [CRITICAL] [main.c:31]Đây là một lỗi nghiêm trọng!
+[2025-06-26 16:51:20] [NOTICE] [main.c:22]Program's logger starts.
+[2025-06-26 16:51:20] [INFO] [main.c:5]Try connecting to Database...
+[2025-06-26 16:51:20] [ERROR] [main.c:6]Failed connection: Did't find server.
+[2025-06-26 16:51:20] [DEBUG] [main.c:10]Starting process user data.
+[2025-06-26 16:51:20] [DEBUG] [main.c:12]Processing number: 1.
+[2025-06-26 16:51:20] [DEBUG] [main.c:12]Processing number: 2.
+[2025-06-26 16:51:20] [DEBUG] [main.c:12]Processing number: 3.
+[2025-06-26 16:51:20] [INFO] [main.c:14]Processing data successfully.
+[2025-06-26 16:51:20] [WARNING] [main.c:25]Space is not enough (remaining 10%).
+[2025-06-26 16:51:20] [ERROR] [main.c:30]This message will not be displayed.
+[2025-06-26 16:51:20] [CRITICAL] [main.c:31]This is critical error!

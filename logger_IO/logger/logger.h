@@ -2,14 +2,14 @@
 #define _LOGGER_H
 
 typedef enum {
-	LOG_EMERGENCY = 0, // can't use system
-        LOG_ALERT     = 1, // need action imediatively
-	LOG_CRITICAL  = 2, // 
-	LOG_ERROR     = 3, // error
-	LOG_WARNING   = 4, // alert
-	LOG_NOTICE    = 5, // importance information
-	LOG_INFO      = 6, // information
-	LOG_DEBUG     = 7  // Thông tin gỡ lỗi
+	LOG_EMERGENCY = 0, 
+        LOG_ALERT = 1, 
+	LOG_CRITICAL  = 2, 
+	LOG_ERROR     = 3, 
+	LOG_WARNING   = 4, 
+	LOG_NOTICE    = 5, 
+	LOG_INFO      = 6, 
+	LOG_DEBUG     = 7  
 } log_level_t;
 
 int logger_init(const char* filename, log_level_t initial_level);
