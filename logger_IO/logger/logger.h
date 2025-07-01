@@ -21,4 +21,5 @@ void logger_clean(void);
 void _log_message(log_level_t level, const char* file, int line, const char* fmt, ...);
 
 #define log_message(level, ...) _log_message(level, __FILE__, __LINE__, __VA_ARGS__)
+
 #endif //Logger.h
