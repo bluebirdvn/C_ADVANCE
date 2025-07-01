@@ -40,7 +40,7 @@ Ví dụ:
 ### Bước 1: Build
 
 ```sh
-gcc -o led_test main.c led_driver.c
+make
 ```
 
 ### Bước 2: Chạy
