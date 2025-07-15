@@ -4,7 +4,7 @@
 #include <string.h>
 #include "config.h"
 #include "publisher.h"
-#include "log.h" // Thêm include
+#include "log.h" 
 
 #define MAX_BUFFER_SIZE 100 
 
