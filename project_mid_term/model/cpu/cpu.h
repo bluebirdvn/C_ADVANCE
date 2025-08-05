@@ -6,7 +6,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdio.h>
-
+#include <ctype.h>
 /*
 * @function: get_cpu_times: Reads the CPU times from the /proc/stat file.
 * @parameters: user, nice, system, idle, iowait, irq, softirq: Pointers to variables where the CPU times will be stored.
@@ -28,13 +28,26 @@ void get_cpu_times(uint64_t *user, uint64_t *nice, uint64_t *system, uint64_t *i
 * total: Pointer to the variable where the total CPU time will be stored.
 * @return: Returns the CPU idle time and total CPU time.
 */
-int calculate_cpu_usage();
+
+
 
 /*
 * @function: calculate_cpu_uage: Calculates the CPU usage percentage.
 * @parameters: None.
 * @return: Returns the CPU usage percentage.
 */
-int calculate_cpu_usage();
+void calculate_cpu_usage(float *usage);
+
+
+/*
+* @function: calculate_each_cpu_uasge: Calculates the CPU usage for each CPU core.
+* @parameters: idle: Pointer to the variable where the idle time for each CPU core will be stored.
+* total: Pointer to the variable where the total CPU time for each CPU core will be stored.
+* usage: Pointer to the variable where the CPU usage percentage for each CPU core will be stored.
+* @return: None.
+*/
+void calculate_each_cpu_uage(uint64_t *idle, uint64_t *total, double *usage);
+
+
 
 #endif // _CPU_H
