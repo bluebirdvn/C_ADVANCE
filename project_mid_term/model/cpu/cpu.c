@@ -1,10 +1,29 @@
 
 #include "cpu.h"
 
-#define NUM_CPU 9
 
-void get_cpu_times(uint64_t *user, uint64_t *nice, uint64_t *system, 
-                    uint64_t *idle, uint64_t *iowait, uint64_t *irq, uint64_t *softirq, uint64_t *steal)
+
+int count_num_cpus(void) 
+{
+    FILE *file = fopen("/proc/stat", "r");
+    if (!file) {
+        perror("Failed to open /proc/stat");
+        exit(EXIT_FAILURE);
+    }
+    int count = 0;
+    char line[256];
+
+    while (fgets(line, sizeof(line), file)) {
+        if (strncmp(line, "cpu", 3) == 0 && isdigit(line[3])) {
+            count++;
+        }
+    }
+
+    fclose(file);
+    return count;
+}
+
+void get_cpu_times(uint64_t cpu_times[NUM_CPU][8])
 {
     FILE *file = fopen("/proc/stat", "r");
     if (!file) {
@@ -12,17 +31,28 @@ void get_cpu_times(uint64_t *user, uint64_t *nice, uint64_t *system,
         exit(EXIT_FAILURE);
     }
     char buffer[256];
-    int cpu_index = 0;
+    int cpu_index = 1;
     while (fgets(buffer, sizeof(buffer), file)) {
-        if (strncmp(buffer, "cpu", 3) == 0 && isdigit(buffer[3])) {
-            if (cpu_index > NUM_CPU) {
-                break;
+        if (strncmp(buffer, "cpu", 3) == 0) {
+            if (buffer[3] == ' ' || buffer[3] == '\t') {
+                // This is the total CPU line
+                sscanf(buffer, "cpu %lu %lu %lu %lu %lu %lu %lu %lu",
+                       &cpu_times[0][0], &cpu_times[0][1],
+                       &cpu_times[0][2], &cpu_times[0][3],
+                       &cpu_times[0][4], &cpu_times[0][5],
+                       &cpu_times[0][6], &cpu_times[0][7]);
+            } else {
+                // This is a per-CPU line
+                sscanf(buffer, "cpu%d %lu %lu %lu %lu %lu %lu %lu %lu",
+                       &cpu_index,
+                       &cpu_times[cpu_index][0], &cpu_times[cpu_index][1],
+                       &cpu_times[cpu_index][2], &cpu_times[cpu_index][3],
+                       &cpu_times[cpu_index][4], &cpu_times[cpu_index][5],
+                       &cpu_times[cpu_index][6], &cpu_times[cpu_index][7]);
+                cpu_index++;
             }
-            sscanf(buffer, "cpu%d %ld %ld %ld %ld %ld %ld %ld %ld",
-                   &cpu_index, user, nice, system, idle, iowait, irq, softirq, steal);
-            cpu_index++;
-
-        }
+    
+        } else break;
     }
     fclose(file);
 }
@@ -52,39 +82,40 @@ void calculate_each_cpu_uage(uint64_t *idle, uint64_t *total, double *usage)
     }
 }
 
-void calculate_cpu_usage(float *usage)
+void calculate_cpu_usage(double *usage)
 {
     uint64_t start[NUM_CPU][8], end[NUM_CPU][8];
     uint64_t idle[NUM_CPU], total[NUM_CPU];
-    // get firts CPU times
-    for (int i = 0; i < NUM_CPU; ++i) {
-    // get firts CPU times
-    get_cpu_times(&start[i][0], &start[i][1], &start[i][2],
-                  &start[i][3], &start[i][4], &start[i][5], &start[i][6], &start[i][7]);
+    // get first CPU times
+    get_cpu_times(start);
 
     sleep(1); // Sleep for 1 second to get the next CPU times
 
     // get second CPU times
-    get_cpu_times(&end[i][0], &end[i][1], &end[i][2],
-                  &end[i][3], &end[i][4], &end[i][5], &end[i][6], &end[i][7]);
-    }
+    get_cpu_times(end);
+
 
     // Calculate idle and total CPU times
     for (int i = 0; i < NUM_CPU; ++i) {
-        calculate_idle_and_total(&start[i], &end[i], &idle[i], &total[i]);
+        calculate_idle_and_total(start[i], end[i], &idle[i], &total[i]);
     }
 
-    calculate_each_cpu_uage(&idle, &total, &usage);
+    calculate_each_cpu_uage(idle, total, usage);
 }
 
 int main(void) {
-    while (1) 
+    NUM_CPU = count_num_cpus() + 1;
+
+    while (1)
     {
-    float usage[NUM_CPU];
+    double usage[NUM_CPU];
     calculate_cpu_usage(usage);
     for (int i = 0; i < NUM_CPU; ++i) {
-        printf("CPU %d Usage: %.2f%%\n", i, usage[i]);
-    }
+        if (i == 0)
+            printf("CPU Total Usage: %.2f%%\n", usage[i]);
+        else
+            printf("CPU%d Usage: %.2f%%\n", i - 1, usage[i]);
+        }
     sleep(2);        
     }
 

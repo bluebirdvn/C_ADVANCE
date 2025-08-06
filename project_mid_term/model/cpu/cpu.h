@@ -7,6 +7,15 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <ctype.h>
+
+
+int NUM_CPU;
+/*
+* @function: count_num_cpus: counts the number of CPU cores available on the system
+* @parameters: None.
+* @return: Returns the number of CPU cores.
+*/
+int count_num_cpus(void);
 /*
 * @function: get_cpu_times: Reads the CPU times from the /proc/stat file.
 * @parameters: user, nice, system, idle, iowait, irq, softirq: Pointers to variables where the CPU times will be stored.
@@ -19,8 +28,8 @@
 * softirq: Time spent servicing software interrupts.
 * @return: None.
 */
-void get_cpu_times(uint64_t *user, uint64_t *nice, uint64_t *system, uint64_t *idle, uint64_t *iowait, uint64_t *irq, uint64_t *softirq, uint64_t *steal);
-
+// void get_cpu_times(uint64_t *user, uint64_t *nice, uint64_t *system, uint64_t *idle, uint64_t *iowait, uint64_t *irq, uint64_t *softirq, uint64_t *steal);
+void get_cpu_times(uint64_t cpu_times[NUM_CPU][8]);
 /*
 * @function: calculate_cpu_usage: Calculates the CPU usage percentage based on the CPU times.
 * @parameters: start, end: Pointers to variables where the start and end CPU times will be stored.
@@ -36,7 +45,7 @@ void get_cpu_times(uint64_t *user, uint64_t *nice, uint64_t *system, uint64_t *i
 * @parameters: None.
 * @return: Returns the CPU usage percentage.
 */
-void calculate_cpu_usage(float *usage);
+void calculate_cpu_usage(double *usage);
 
 
 /*
