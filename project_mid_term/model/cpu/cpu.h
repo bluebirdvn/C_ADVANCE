@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <time.h>
 
 #define NUM_FIELDS 8
 
@@ -53,7 +54,32 @@ void calculate_idle_and_total(CPU_usage *usage);
 */
 void calculate_cpu_usage(CPU_usage *usage, int num_cpus);
 
+/*
+*@function: simulation_temperature
+*@description: simulate the temperature of the CPU
+* this function create a file named "temperature.txt" is put in the /home/shunkun/fake_temp.txt file.
+*/
+void simulation_temperature(void);
+/*
+*@function: get_cpu_temperature
+*@description: get the CPU temperature from the file /home/shunkun/fake_temp.txt
+*@param: temperature - a pointer to store the CPU temperature.
+*/
+void get_cpu_temperature(double *temperature);
 
 
+/*
+* @function: get_cpu_frequency
+* @descripton: get the CPU frequency from the file /proc/cpuinfo
+* @param: frequency - a pointer to store the CPU frequency.
+*/
+void get_cpu_frequency(double *frequency);
 
+/*
+*@function:get_top_processes_by_cpu
+*@description: get the top processes by CPU usage
+* this function use system command to get the top processes by CPU usage
+* and print the result to the console.
+*/
+void get_top_processes_by_cpu(void);
 #endif // _CPU_H

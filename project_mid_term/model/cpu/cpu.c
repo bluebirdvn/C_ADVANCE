@@ -1,6 +1,7 @@
 
 #include "cpu.h"
 
+
 int count_num_cpus(void)
 {
     FILE *fp = fopen("/proc/stat", "r");
@@ -91,6 +92,64 @@ void calculate_cpu_usage(CPU_usage *usage, int num_cpus)
 }
 
 
+void simulation_temperature(void) 
+{
+    FILE *fp = fopen("/home/shunkun/fake_temp.txt", "w");
+    if (!fp) {
+        perror("Failed to create simulation temperature file");
+        return;
+    }
+
+    srand(time(NULL));
+
+    double simulated_temp = 30 + rand()%70;
+    fprintf(fp, "%.2f\n", simulated_temp);
+    fclose(fp);
+}
+
+
+void get_cpu_temperature(double *temperature)
+{
+    FILE *fp = fopen("/home/shunkun/fake_temp.txt", "r");
+    if (!fp) {
+        perror("Failed to open simulation temperature file");
+        return;
+    }
+    if (fscanf(fp, "%lf", temperature) != 1) {
+        perror("Failed to read CPU temperature");
+        fclose(fp);
+        return;
+    }
+    fclose(fp);
+}
+
+void get_cpu_frequency(double *frequency)
+{
+
+    FILE *fp = fopen("/proc/cpuinfo", "r");
+    if (!fp) {
+        perror("Failed to open /proc/cpuinfo");
+        return;
+
+    }
+    char buffer[256];
+    while (fgets(buffer, sizeof(buffer), fp)) {
+        if (strncmp(buffer, "cpu MHz", 7) == 0) {
+            sscanf(buffer, "cpu MHz : %lf", frequency);
+            fclose(fp);
+            return;
+        }
+    }
+    fclose(fp);
+
+}
+
+void get_top_processes_by_cpu() {
+    printf("Top 5 processes by CPU usage:\n");
+    system("ps -eo pid,comm,%cpu --sort=-%cpu | head -n 6");
+}
+
+
 int main(void) {
     int num_cpus = count_num_cpus();
     if (num_cpus < 0) {
@@ -114,7 +173,7 @@ int main(void) {
         sleep(2);
         cpu_get_times(usage, num_cpus);
         calculate_cpu_usage(usage, num_cpus);
-
+        printf("\n=====================CPU ===================\n");
         for (int i = 0; i < num_cpus; ++i) {
             if (i ==0) {
                 printf("Total CPU Usage: %.2f%%\n", usage[i].usage);
@@ -124,6 +183,21 @@ int main(void) {
 
         }
 
+        double temperature;
+        simulation_temperature();
+        get_cpu_temperature(&temperature);
+        printf("CPU Temperature: %.2f°C\n", temperature);
+
+        double frequency;
+        get_cpu_frequency(&frequency);
+        if (frequency < 0) {
+            fprintf(stderr, "Error getting CPU frequency\n");
+            free(usage);
+            return EXIT_FAILURE;
+        }
+        printf("CPU Frequency: %.2f MHz\n", frequency);
+        get_top_processes_by_cpu();
+        sleep(2);
     }
     free(usage);
     return EXIT_SUCCESS;
