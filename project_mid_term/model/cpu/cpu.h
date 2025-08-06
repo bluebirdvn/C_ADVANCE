@@ -8,54 +8,51 @@
 #include <stdio.h>
 #include <ctype.h>
 
+#define NUM_FIELDS 8
 
-int NUM_CPU;
+typedef struct {
+    uint64_t cpu_times[NUM_FIELDS];
+} CPU_times;
+
+typedef struct {
+    CPU_times start;
+    CPU_times end;
+    uint64_t idle;
+    uint64_t total;
+    double usage;
+} CPU_usage;
+
+
 /*
-* @function: count_num_cpus: counts the number of CPU cores available on the system
-* @parameters: None.
-* @return: Returns the number of CPU cores.
+*@function: count_num_cpus
+*@description: count the number of CPUs in the system
+*@return: the number of CPUs
+* this function reads the /proc/stat file to determin the number of CPUs
 */
 int count_num_cpus(void);
-/*
-* @function: get_cpu_times: Reads the CPU times from the /proc/stat file.
-* @parameters: user, nice, system, idle, iowait, irq, softirq: Pointers to variables where the CPU times will be stored.
-* user: Time spent in user mode.
-* nice: Time spent in user mode with low priority (nice).
-* system: Time spent in system mode.
-* idle: Time spent in idle mode.
-* iowait: Time spent waiting for I/O operations.
-* irq: Time spent servicing hardware interrupts.
-* softirq: Time spent servicing software interrupts.
-* @return: None.
-*/
-// void get_cpu_times(uint64_t *user, uint64_t *nice, uint64_t *system, uint64_t *idle, uint64_t *iowait, uint64_t *irq, uint64_t *softirq, uint64_t *steal);
-void get_cpu_times(uint64_t cpu_times[NUM_CPU][8]);
-/*
-* @function: calculate_cpu_usage: Calculates the CPU usage percentage based on the CPU times.
-* @parameters: start, end: Pointers to variables where the start and end CPU times will be stored.
-* idle: Pointer to the variable where the idle time will be stored.
-* total: Pointer to the variable where the total CPU time will be stored.
-* @return: Returns the CPU idle time and total CPU time.
-*/
-
-
 
 /*
-* @function: calculate_cpu_uage: Calculates the CPU usage percentage.
-* @parameters: None.
-* @return: Returns the CPU usage percentage.
+*@function: get_cpu_times
+*@description: get the CPU times from /proc/stat
+*@param: cpu_times - an array to store the CPU times 
+*@param: num_cpus - the number of CPUs
 */
-void calculate_cpu_usage(double *usage);
-
+void cpu_get_times(CPU_usage *cpu_usage, int num_cpus);
+/*
+*@function: calculate_idle_and_total
+*@description: calculate the idle and total CPU times
+*@param: CPU_usage - a struct storing the CPU times, idle time (calculated) and total time (calculated), and usage (calculated)
+*/
+void calculate_idle_and_total(CPU_usage *usage);
 
 /*
-* @function: calculate_each_cpu_uasge: Calculates the CPU usage for each CPU core.
-* @parameters: idle: Pointer to the variable where the idle time for each CPU core will be stored.
-* total: Pointer to the variable where the total CPU time for each CPU core will be stored.
-* usage: Pointer to the variable where the CPU usage percentage for each CPU core will be stored.
-* @return: None.
+*@function: calculate_cpu_usage
+*@description: calculate the CPU usage for total and each CPU
+*@param: CPU_usage - a struct storing the CPU times, idle time (calculated) and total time (calculated), and usage (calculated)
+*@param: num_cpus - the number of CPUs
 */
-void calculate_each_cpu_uage(uint64_t *idle, uint64_t *total, double *usage);
+void calculate_cpu_usage(CPU_usage *usage, int num_cpus);
+
 
 
 
