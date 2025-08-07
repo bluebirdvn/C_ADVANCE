@@ -20,6 +20,8 @@ typedef struct {
 
     uint64_t cached_memory;
     uint64_t buffers_memory;
+
+    Cpu_process_info cpu_process_info;
 } Memory_info;
 
 typedef struct {
