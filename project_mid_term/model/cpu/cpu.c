@@ -150,55 +150,55 @@ void get_top_processes_by_cpu() {
 }
 
 
-int main(void) {
-    int num_cpus = count_num_cpus();
-    if (num_cpus < 0) {
-        fprintf(stderr, "Error counting CPUs\n");
-        return EXIT_FAILURE;
-    }
+// int main(void) {
+//     int num_cpus = count_num_cpus();
+//     if (num_cpus < 0) {
+//         fprintf(stderr, "Error counting CPUs\n");
+//         return EXIT_FAILURE;
+//     }
 
-    CPU_usage *usage = malloc(sizeof(CPU_usage) * num_cpus);
-    if (!usage) {
-        perror("Failed to allocate memory for CPU usage");
-        return EXIT_FAILURE;
-    }
+//     CPU_usage *usage = malloc(sizeof(CPU_usage) * num_cpus);
+//     if (!usage) {
+//         perror("Failed to allocate memory for CPU usage");
+//         return EXIT_FAILURE;
+//     }
 
-    cpu_get_times(usage, num_cpus);
+//     cpu_get_times(usage, num_cpus);
     
-    while (1) {
-        for (int i = 0; i < num_cpus; ++i) {
-            memcpy(usage[i].start.cpu_times, usage[i].end.cpu_times, sizeof(usage[i].end.cpu_times));
-        }
+//     while (1) {
+//         for (int i = 0; i < num_cpus; ++i) {
+//             memcpy(usage[i].start.cpu_times, usage[i].end.cpu_times, sizeof(usage[i].end.cpu_times));
+//         }
 
-        sleep(2);
-        cpu_get_times(usage, num_cpus);
-        calculate_cpu_usage(usage, num_cpus);
-        printf("\n=====================CPU ===================\n");
-        for (int i = 0; i < num_cpus; ++i) {
-            if (i ==0) {
-                printf("Total CPU Usage: %.2f%%\n", usage[i].usage);
-            } else {
-                printf("CPU %d Usage: %.2f%%\n", i - 1, usage[i].usage);
-            }
+//         sleep(2);
+//         cpu_get_times(usage, num_cpus);
+//         calculate_cpu_usage(usage, num_cpus);
+//         printf("\n=====================CPU ===================\n");
+//         for (int i = 0; i < num_cpus; ++i) {
+//             if (i ==0) {
+//                 printf("Total CPU Usage: %.2f%%\n", usage[i].usage);
+//             } else {
+//                 printf("CPU %d Usage: %.2f%%\n", i - 1, usage[i].usage);
+//             }
 
-        }
+//         }
 
-        double temperature;
-        simulation_temperature();
-        get_cpu_temperature(&temperature);
-        printf("CPU Temperature: %.2f°C\n", temperature);
+//         double temperature;
+//         simulation_temperature();
+//         get_cpu_temperature(&temperature);
+//         printf("CPU Temperature: %.2f°C\n", temperature);
 
-        double frequency;
-        get_cpu_frequency(&frequency);
-        if (frequency < 0) {
-            fprintf(stderr, "Error getting CPU frequency\n");
-            free(usage);
-            return EXIT_FAILURE;
-        }
-        printf("CPU Frequency: %.2f MHz\n", frequency);
-        get_top_processes_by_cpu();
-        sleep(2);
-    }
-    free(usage);
-    return EXIT_SUCCESS;
-}
+//         double frequency;
+//         get_cpu_frequency(&frequency);
+//         if (frequency < 0) {
+//             fprintf(stderr, "Error getting CPU frequency\n");
+//             free(usage);
+//             return EXIT_FAILURE;
+//         }
+//         printf("CPU Frequency: %.2f MHz\n", frequency);
+//         get_top_processes_by_cpu();
+//         sleep(2);
+//     }
+//     free(usage);
+//     return EXIT_SUCCESS;
+// }
