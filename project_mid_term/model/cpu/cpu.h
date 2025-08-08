@@ -21,6 +21,19 @@ typedef struct {
     uint64_t idle;
     uint64_t total;
     double usage;
+    uint8_t num_cpu;
+
+    double temperature;
+    double frequency;
+
+    int (*count_num_cpus)(void);
+    void (*cpu_get_times)(CPU_usage *cpu_usage, int num_cpus);
+    void (*calculate_idle_and_total)(CPU_usage *usage);
+    void (*calculate_cpu_usage)(CPU_usage *usage, int num_cpus);
+    void (*simulation_temperature)(void);
+    void (*get_cpu_temperature)(double *temperature);
+    void (*get_cpu_frequency)(double);
+    void (*get_top_processes_by_cpu)(void);
 } CPU_usage;
 
 
@@ -82,4 +95,5 @@ void get_cpu_frequency(double *frequency);
 * and print the result to the console.
 */
 void get_top_processes_by_cpu(void);
+
 #endif // _CPU_H
