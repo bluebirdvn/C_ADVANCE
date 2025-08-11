@@ -23,23 +23,23 @@ struct System_info {
     void (*load_average)(System_info *);
 };
 
-static struct System_info g_si;
+static struct System_info System_info_instance;
 static int g_inited = 0;
 
 static void ensure_init(void) {
     if (g_inited) return;
-    memset(&g_si, 0, sizeof(g_si));
-    g_si.get_up_time = get_up_time;
-    g_si.get_system_time = get_system_time;
-    g_si.get_kernel_version = get_kernel_version;
-    g_si.service_info = service_info;
-    g_si.load_average = load_average;
+    memset(&System_info_instance, 0, sizeof(System_info_instance));
+    System_info_instance.get_up_time = get_up_time;
+    System_info_instance.get_system_time = get_system_time;
+    System_info_instance.get_kernel_version = get_kernel_version;
+    System_info_instance.service_info = service_info;
+    System_info_instance.load_average = load_average;
     g_inited = 1;
 }
 
 System_info *system_info_instance(void) {
     ensure_init();
-    return &g_si;
+    return &System_info_instance;
 }
 
 void get_up_time(System_info *si) {

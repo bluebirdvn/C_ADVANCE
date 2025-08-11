@@ -32,7 +32,7 @@ struct Storage_info {
     void (*get_sectors_info)(Storage_info *);
 };
 
-static struct Storage_info g_si;
+static struct Storage_info Storage_info_instance;
 static int g_inited = 0;
 
 // --------- helpers ---------
@@ -80,16 +80,16 @@ static void pick_defaults(void) {
 
 static void ensure_init(void) {
     if (g_inited) return;
-    memset(&g_si, 0, sizeof(g_si));
-    g_si.get_storage_info = get_storage_info;
-    g_si.get_speed_and_iops_info = get_speed_and_iops_info;
-    g_si.get_sectors_info = get_sectors_info;
+    memset(&Storage_info_instance, 0, sizeof(Storage_info_instance));
+    Storage_info_instance.get_storage_info = get_storage_info;
+    Storage_info_instance.get_speed_and_iops_info = get_speed_and_iops_info;
+    Storage_info_instance.get_sectors_info = get_sectors_info;
     pick_defaults();
     g_inited = 1;
 }
 
 // ---- public setters ----
-Storage_info *storage_info_instance(void) { ensure_init(); return &g_si; }
+Storage_info *storage_info_instance(void) { ensure_init(); return &Storage_info_instance; }
 
 int storage_set_mount_path(const char *path) {
     ensure_init();
