@@ -8,7 +8,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <ctype.h>
-
+typedef struct Memory_info Memory_info;
+typedef struct Cpu_process_info Cpu_process_info;
 typedef struct {
     uint64_t total_memory;
     uint64_t free_memory;

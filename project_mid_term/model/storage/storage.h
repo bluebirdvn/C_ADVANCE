@@ -1,53 +1,46 @@
-#ifndef _STORAGE_H
-#define _STORAGE_H
+#ifndef STORAGE_H_
+#define STORAGE_H_
 
 #include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <ctype.h>
-#include <sys/statvfs.h>
-#include <time.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef struct Storage_info Storage_info; // opaque
+
+// Data containers
+typedef struct {
+    uint64_t total_bytes;
+    uint64_t used_bytes;
+    uint64_t free_bytes;
+} Storage_capacity;
 
 typedef struct {
-    uint64_t total_storage;
-    uint64_t used_storage;
-    uint64_t free_storage;
+    double read_MBps;
+    double write_MBps;
+    double iops_read;   // ops/s
+    double iops_write;  // ops/s
+} Storage_perf;
 
-    double read_speed;
-    double write_speed;
+typedef struct {
+    uint64_t bytes_read;    // from sectors * 512
+    uint64_t bytes_written; // from sectors * 512
+} Storage_sectors;
 
-    uint64_t sectors_read;
-    uint64_t sectors_written;
+// Singleton accessors
+Storage_info *storage_info_instance(void);
+int storage_set_mount_path(const char *path);     // default: "/"
+int storage_set_device(const char *device);       // default: best-guess from /proc/diskstats (first non-loop)
+int storage_set_testfile_dir(const char *dir);    // default: $TMPDIR or "/tmp"
 
-    uint64_t iops_read;
-    uint64_t iops_written;
-} Storage_info;
-
-/*
-*@function: get_storage_info
-*@description: get the storage information from /proc/diskstats
-*@param: storage_info: a pointer to a Storage_info struct to store the storage information
-*/
+// Public API (standalone functions + also bound to function pointers inside struct)
 void get_storage_info(Storage_info *storage_info);
-
-/*
-*@function: get_speed_and_iops_info
-*@description: get the read and write speed of the storage, as well as the IOPS
-*@param: storage_info: a pointer to a storage_info struct to store the read and write speed, as well as the IOPS
-* this function creates a file named "storage_speed.bin" in the /home/shunkun
-*/
 void get_speed_and_iops_info(Storage_info *storage_info);
-
-/*
-*@function: get_sectors_info
-*@description: get the number of sectors read and written
-*@param: storage_info: a pointer to a storage_info struct to store the sectors read and written
-*/
 void get_sectors_info(Storage_info *storage_info);
 
+#ifdef __cplusplus
+}
+#endif
 
-
-#endif // _STORAGE_H
+#endif // STORAGE_H_

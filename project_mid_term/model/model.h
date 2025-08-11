@@ -15,6 +15,7 @@ struct System_monitor{
     Memory_info *memory_info;
     Cpu_usage *cpu_usage;
 
+    
 
 } ;
 

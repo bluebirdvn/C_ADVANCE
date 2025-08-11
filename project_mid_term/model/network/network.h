@@ -1,25 +1,21 @@
-#ifndef _NETWORK_H
-#define _NETWORK_H
+#ifndef NETWORK_H_
+#define NETWORK_H_
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
 #include <stdint.h>
-#include <ctype.h>
-#include <sys/statvfs.h>
-#include <time.h>
-#include <ifaddrs.h>
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
+// --- Forward opaque type ---
+typedef struct Network_info Network_info;
+
+// --- Data structures ---
 typedef struct {
     uint64_t tx_bytes;
     uint64_t rx_bytes;
-    double upload_speed;
-    double download_speed;
+    double upload_speed_kBps;   // KB/s
+    double download_speed_kBps;  // KB/s
 } Network_speed_info;
 
 typedef struct {
@@ -32,68 +28,30 @@ typedef struct {
 } Network_packet_info;
 
 typedef struct {
-    uint32_t total_tcp_connections;
-    uint32_t total_udp_connections;
+    uint32_t total_tcp_connections; // ESTABLISHED
+    uint32_t total_udp_sockets;     // UDP in use (close to '07' state)
 } Network_connection_info;
-
 
 typedef struct {
     char interface_name[64];
-    char ip_address[16];
+    char ip_address[16]; // IPv4 string
 } Network_interface_info;
 
+// --- Singleton Accessors ---
+Network_info *network_info_instance(void);
+int network_set_interface(const char *ifname);
+const char *network_get_interface(void);
 
-typedef struct {
-    Network_speed_info speed_info;
-    double bandwidth_usage[2];
-    uint64_t latency;
-    Network_packet_info packet_info;
-    Network_connection_info connection_info;
-    Network_interface_info interface_info[10];
-} Network_info;
-
-
-/*
-*@function: get_tx_rx_info
-*@description: Retrieves the transmitted and received bytes for network interfaces.
-*@param network_info: Pointer to Network_info structure to store the retrieved data.
-*/
+// --- Public API (standalone functions mirroring methods) ---
 void get_tx_rx_info(Network_info *network_info);
-
-
-/*
-*@function: get_network_speed
-*@description: Calculates the upload and download speeds of the network interfaces through the result of get_tx_rx_info.
-*@param network_info: Pointer to Network_info structure to store the calculated speeds.
-*@note: This function should be called after or within get_tx_rx_info.
-*/
 void get_network_speed(Network_info *network_info);
-
-/*
-* @function: get_bandwidth_usage
-* @description: Get bandwidth usage of the network interfaces.
-* @param: network_info: Pointer to Network_info structure to store the bandwidth usage.
-*/
 void get_bandwidth_usage(Network_info *network_info);
-
-/*
-* @function: get_packet_info
-* @description: Get packet information for the network interfaces.
-* @param: network_info: Pointer to Network_info structure to store the packet information.
-*/
 void get_packet_info(Network_info *network_info);
+int  get_connection_info(Network_info *network_info);
+int  get_network_interface_info(Network_info *network_info);
 
-/*
-* @function: get_connection_info
-* @description: Get connection information for the network interfaces.
-* @param: network_info: Pointer to Network_info structure to store the connection information.
-*/
-int get_connection_info(Network_info *network_info);
-/*
-* @function: get_network_interface_info
-* @description: this function retrieves information about the network interfaces.
-* @param: network_info: Pointer to Network_info structure to store the network interface information.
-*/
-int get_network_interface_info(Network_info *network_info);
+#ifdef __cplusplus
+}
+#endif
 
-#endif // _NETWORK_H
+#endif // NETWORK_H_
