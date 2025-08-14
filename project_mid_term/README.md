@@ -1,4 +1,4 @@
-# Linux System Monitor
+# Computer configuration monitoring system
 
 A comprehensive real-time system monitoring application for Linux systems, written in C. This application provides detailed insights into CPU, memory, network, storage, and system information through an interactive terminal interface.
 
