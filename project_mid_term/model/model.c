@@ -1,56 +1,60 @@
-// File: model/model.c
-
 #include "model.h"
-#include <unistd.h> // For sleep()
-#include <string.h> // For memcpy
+#include <unistd.h>
+#include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
-// Singleton instance for the model
-static System_monitor g_monitor_instance;
+static SystemMonitor g_monitor_instance;
 static int g_is_initialized = 0;
 
-// Forward declaration for the thread function
 static void* update_metrics_thread_func(void *arg);
-static void check_for_alerts(System_monitor *monitor);
+static void check_for_alerts(SystemMonitor *monitor);
 
-System_monitor *system_monitor_init(void) {
+SystemMonitor *system_monitor_init(void) {
     if (g_is_initialized) {
         return &g_monitor_instance;
     }
-
-    // --- Step 1: Initialize all sub-modules using their singletons ---
-    log_message(LOG_INFO, "Initializing System Monitor...");
     
-    // Initialize logger first
+    memset(&g_monitor_instance, 0, sizeof(SystemMonitor));
+
     logger_init("monitor.log", LOG_DEBUG);
+    log_message(LOG_INFO, "Initializing System Monitor...");
 
-    g_monitor_instance.cpu_manager = CPU_manager_init();
-    g_monitor_instance.memory_info = Memory_info_init();
-    g_monitor_instance.network_info = network_info_instance();
-    g_monitor_instance.storage_info = storage_info_instance();
-    g_monitor_instance.system_info = system_info_instance();
+    // --- Step 1: Initialize all sub-modules ---
+    g_monitor_instance.cpu_manager = cpu_manager_create();
+    g_monitor_instance.memory_manager = memory_manager_create();
+    g_monitor_instance.network_manager = network_manager_create();
+    g_monitor_instance.storage_manager = storage_manager_create();
+    g_monitor_instance.system_manager = system_manager_create();
 
+    if (!g_monitor_instance.cpu_manager || !g_monitor_instance.memory_manager || !g_monitor_instance.network_manager ||
+        !g_monitor_instance.storage_manager || !g_monitor_instance.system_manager) {
+        log_message(LOG_CRITICAL, "Failed to create one or more managers. Aborting.");
+        // We should destroy any that were successfully created
+        system_monitor_destroy(&g_monitor_instance);
+        return NULL;
+    }
+    
     // --- Step 2: Set default thresholds ---
     g_monitor_instance.thresholds.cpu_usage_percent = 90.0;
     g_monitor_instance.thresholds.memory_usage_percent = 85.0;
     g_monitor_instance.thresholds.storage_usage_percent = 90.0;
-    log_message(LOG_INFO, "Default thresholds set: CPU > %.1f%%, Memory > %.1f%%, Storage > %0.1f%%",
+    log_message(LOG_INFO, "Default thresholds set: CPU > %.1f%%, Memory > %.1f%%, Storage > %.1f%%",
                 g_monitor_instance.thresholds.cpu_usage_percent,
                 g_monitor_instance.thresholds.memory_usage_percent,
                 g_monitor_instance.thresholds.storage_usage_percent);
 
-
     // --- Step 3: Initialize mutex and thread ---
     if (pthread_mutex_init(&g_monitor_instance.data_mutex, NULL) != 0) {
         log_message(LOG_CRITICAL, "Failed to initialize mutex. Exiting.");
-        perror("pthread_mutex_init");
         exit(EXIT_FAILURE);
     }
 
     g_monitor_instance.is_running = 1;
     if (pthread_create(&g_monitor_instance.update_thread, NULL, update_metrics_thread_func, &g_monitor_instance) != 0) {
         log_message(LOG_CRITICAL, "Failed to create update thread. Exiting.");
-        perror("pthread_create");
+        g_monitor_instance.is_running = 0;
+        system_monitor_destroy(&g_monitor_instance);
         exit(EXIT_FAILURE);
     }
     
@@ -59,48 +63,46 @@ System_monitor *system_monitor_init(void) {
     return &g_monitor_instance;
 }
 
-void system_monitor_destroy(System_monitor *monitor) {
-    if (!monitor || !g_is_initialized) return;
+void system_monitor_destroy(SystemMonitor *monitor) {
+    if (!monitor) return;
 
-    log_message(LOG_INFO, "Shutting down System Monitor...");
-    monitor->is_running = 0; // Signal the thread to stop
-
-    // Wait for the thread to finish
-    pthread_join(monitor->update_thread, NULL);
-
-    // Destroy the mutex
+    if (monitor->is_running) {
+        log_message(LOG_INFO, "Shutting down System Monitor...");
+        monitor->is_running = 0;
+        pthread_join(monitor->update_thread, NULL);
+        log_message(LOG_INFO, "Update thread stopped.");
+    }
+    
     pthread_mutex_destroy(&monitor->data_mutex);
+
+    // Destroy all managers
+    cpu_manager_destroy();
+    memory_manager_destroy();
+    network_manager_destroy();
+    storage_manager_destroy();
+    system_manager_destroy();
     
-    // Clean up logger
+    log_message(LOG_INFO, "All managers destroyed.");
     logger_clean();
-    
     g_is_initialized = 0;
-    log_message(LOG_INFO, "System Monitor shut down complete.");
 }
 
-void system_monitor_get_data_snapshot(System_monitor *monitor, System_monitor *destination) {
+void system_monitor_get_data_snapshot(SystemMonitor *monitor, SystemMonitor *destination) {
     pthread_mutex_lock(&monitor->data_mutex);
-    // Copy the entire data structure safely
-    memcpy(destination, monitor, sizeof(System_monitor));
+    memcpy(destination, monitor, sizeof(SystemMonitor));
     pthread_mutex_unlock(&monitor->data_mutex);
 }
 
-void system_monitor_set_thresholds(System_monitor *monitor, Monitor_thresholds new_thresholds) {
+void system_monitor_set_thresholds(SystemMonitor *monitor, Monitor_thresholds new_thresholds) {
     pthread_mutex_lock(&monitor->data_mutex);
     monitor->thresholds = new_thresholds;
     pthread_mutex_unlock(&monitor->data_mutex);
     log_message(LOG_NOTICE, "Thresholds updated.");
 }
 
-
-/**
- * @brief This is the core function for the background thread.
- * It periodically updates all system metrics.
- */
 static void* update_metrics_thread_func(void *arg) {
-    System_monitor *monitor = (System_monitor*)arg;
+    SystemMonitor *monitor = (SystemMonitor*)arg;
 
-    // Initial sleep to allow system to stabilize before first reading.
     sleep(1);
 
     while (monitor->is_running) {
@@ -108,33 +110,28 @@ static void* update_metrics_thread_func(void *arg) {
 
         // --- Update all metrics ---
         // CPU
-        monitor->cpu_manager->cpu_get_times(monitor->cpu_manager);
-        monitor->cpu_manager->calculate_cpu_usage(monitor->cpu_manager);
-        monitor->cpu_manager->get_cpu_frequency(monitor->cpu_manager);
-        // NOTE: The temperature simulation writes to a file. In a real scenario, this might not be needed.
-        monitor->cpu_manager->simulation_temperature(); 
-        monitor->cpu_manager->get_cpu_temperature(monitor->cpu_manager);
-
+        get_usage(monitor->cpu_manager);
+        get_frequency(monitor->cpu_manager);
+        get_temperature(monitor->cpu_manager);
+        get_top_process(monitor->cpu_manager);
+        
         // Memory
-        monitor->memory_info->get_memory_info(monitor->memory_info);
-
+        memory_update_stats(monitor->memory_manager);
+        
         // System
-        monitor->system_info->get_up_time(monitor->system_info);
-        monitor->system_info->load_average(monitor->system_info);
+        system_update_uptime(monitor->system_manager);
+        system_update_time(monitor->system_manager);
+        system_update_load_average(monitor->system_manager);
+        system_update_process_count(monitor->system_manager);
 
-        // Network (Use the standalone functions as defined in your API)
-        // These are fast reads
-        get_tx_rx_info(monitor->network_info); 
-        get_packet_info(monitor->network_info);
-        get_connection_info(monitor->network_info);
-
-        // NOTE: The functions below are SLOW and BLOCKING.
-        // In a real application, you might run them less frequently.
-        // For this example, we run them in the background thread.
-        get_network_speed(monitor->network_info); // This contains a sleep(1)
+        // Network
+        get_bytes(monitor->network_manager);
+        get_speed(monitor->network_manager);
+        get_connections(monitor->network_manager);
 
         // Storage
-        get_storage_info(monitor->storage_info);
+        get_storage_info(monitor->storage_manager);
+        run_storage_benchmark(monitor->storage_manager);
 
         // --- Check for alerts ---
         check_for_alerts(monitor);
@@ -142,31 +139,23 @@ static void* update_metrics_thread_func(void *arg) {
         pthread_mutex_unlock(&monitor->data_mutex);
 
         // Wait for the next update cycle.
-        // The total cycle time will be this sleep + time taken by functions above.
-        // Since get_network_speed() already sleeps for 1s, we can make this short.
         sleep(1);
     }
     log_message(LOG_INFO, "Update thread is shutting down.");
     return NULL;
 }
 
-
-/**
- * @brief Checks current data against thresholds and logs alerts.
- */
-static void check_for_alerts(System_monitor *monitor) {
-    // This function is called inside a mutex lock, so data is consistent.
-    
-    // Check CPU Usage
-    if (monitor->cpu_manager->usage > monitor->thresholds.cpu_usage_percent) {
+static void check_for_alerts(SystemMonitor *monitor) {
+    // Check CPU Usage (Overall CPU is at index 0)
+    if (monitor->cpu_manager->usage_percent[0] > monitor->thresholds.cpu_usage_percent) {
         log_message(LOG_WARNING, "High CPU Usage Alert: %.2f%% (Threshold: >%.1f%%)",
-                    monitor->cpu_manager->usage,
+                    monitor->cpu_manager->usage_percent[0],
                     monitor->thresholds.cpu_usage_percent);
     }
 
     // Check Memory Usage
-    if (monitor->memory_info->total_memory > 0) {
-        double mem_usage_percent = 100.0 * monitor->memory_info->used_memory / monitor->memory_info->total_memory;
+    if (monitor->memory_manager->total_kb > 0) {
+        double mem_usage_percent = 100.0 * monitor->memory_manager->used_kb / monitor->memory_manager->total_kb;
         if (mem_usage_percent > monitor->thresholds.memory_usage_percent) {
             log_message(LOG_WARNING, "High Memory Usage Alert: %.2f%% (Threshold: >%.1f%%)",
                         mem_usage_percent,
@@ -174,11 +163,11 @@ static void check_for_alerts(System_monitor *monitor) {
         }
     }
 
-    if (monitor->storage_info.capacity.total_bytes > 0) {
-        double storage_usage_percent = 100 * (1.0)(monitor->storage_info.capacity.used_bytes)/(monitor->storage_info.capacity.total_bytes);
-
+    // Check Storage Usage
+    if (monitor->storage_manager->capacity.total_bytes > 0) {
+        double storage_usage_percent = 100.0 * monitor->storage_manager->capacity.used_bytes / monitor->storage_manager->capacity.total_bytes;
         if (storage_usage_percent > monitor->thresholds.storage_usage_percent) {
-            log_message(LOG_WARNING, "High Storage Usage Alert: % .2f%% (Threshold: >%.1f%%)",
+            log_message(LOG_WARNING, "High Storage Usage Alert: %.2f%% (Threshold: >%.1f%%)",
                         storage_usage_percent,
                         monitor->thresholds.storage_usage_percent);
         }

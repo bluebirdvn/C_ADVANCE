@@ -2,53 +2,58 @@
 #define NETWORK_H_
 
 #include <stdint.h>
+#include <time.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-// --- Forward opaque type ---
-typedef struct Network_info Network_info;
+#define MAX_IPV4_PER_IF 4
+#define MAX_IPV6_PER_IF 4
 
-// --- Data structures ---
-typedef struct {
-    uint64_t tx_bytes;
-    uint64_t rx_bytes;
-    double upload_speed_kBps;   // KB/s
-    double download_speed_kBps;  // KB/s
-} Network_speed_info;
+typedef struct NetworkManager NetworkManager;
 
-typedef struct {
-    uint64_t packet_tx;
-    uint64_t packet_rx;
-    uint64_t rx_errors;
-    uint64_t tx_errors;
-    uint64_t rx_dropped;
-    uint64_t tx_dropped;
-} Network_packet_info;
+struct NetworkManager{
+    char interface_name[32];
 
-typedef struct {
-    uint32_t total_tcp_connections; // ESTABLISHED
-    uint32_t total_udp_sockets;     // UDP in use (close to '07' state)
-} Network_connection_info;
+    // IP Addresses
+    char ipv4_addrs[MAX_IPV4_PER_IF][16];   
+    int  ipv4_count;
+    char ipv6_addrs[MAX_IPV6_PER_IF][46];   
+    int  ipv6_count;
 
-typedef struct {
-    char interface_name[64];
-    char ip_address[16]; // IPv4 string
-} Network_interface_info;
+    // Cumulative Stats
+    uint64_t rx_bytes, tx_bytes;
+    uint64_t rx_packets, tx_packets;
 
-// --- Singleton Accessors ---
-Network_info *network_info_instance(void);
-int network_set_interface(const char *ifname);
-const char *network_get_interface(void);
+    // Speeds
+    double rx_speed_kbps, tx_speed_kbps;
+    
+    // Connections
+    int tcp_connections_total;
+    int tcp_connections_established;
 
-// --- Public API (standalone functions mirroring methods) ---
-void get_tx_rx_info(Network_info *network_info);
-void get_network_speed(Network_info *network_info);
-void get_bandwidth_usage(Network_info *network_info);
-void get_packet_info(Network_info *network_info);
-int  get_connection_info(Network_info *network_info);
-int  get_network_interface_info(Network_info *network_info);
+    // Interface Info
+    int link_up;
+
+    // --- Internal fields ---
+    uint64_t prev_rx_bytes, prev_tx_bytes;
+    struct timespec last_ts;
+    void (*update_bytes)(void);
+    void (*update_speed)(void);
+    void (*update_connections)(void);
+    void (*update_interface_info)(void);
+};
+
+// --- Singleton Management API ---
+void network_manager_destroy(void);
+NetworkManager *network_manager_create(void);
+
+// --- Public Data Update API ---
+void get_bytes(NetworkManager *manager);
+void get_speed(NetworkManager *manager);
+void get_connections(NetworkManager *manager);
+void get_interface_info(NetworkManager *manager);
 
 #ifdef __cplusplus
 }

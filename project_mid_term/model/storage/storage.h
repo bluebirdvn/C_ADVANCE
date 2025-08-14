@@ -7,9 +7,9 @@
 extern "C" {
 #endif
 
-typedef struct Storage_info Storage_info; // opaque
+typedef struct StorageManager StorageManager;
 
-// Data containers
+// --- Public Data Structures ---
 typedef struct {
     uint64_t total_bytes;
     uint64_t used_bytes;
@@ -19,25 +19,38 @@ typedef struct {
 typedef struct {
     double read_MBps;
     double write_MBps;
-    double iops_read;   // ops/s
-    double iops_write;  // ops/s
 } Storage_perf;
 
 typedef struct {
-    uint64_t bytes_read;    // from sectors * 512
-    uint64_t bytes_written; // from sectors * 512
-} Storage_sectors;
+    uint64_t bytes_read;
+    uint64_t bytes_written;
+} Storage_io;
 
-// Singleton accessors
-Storage_info *storage_info_instance(void);
-int storage_set_mount_path(const char *path);     // default: "/"
-int storage_set_device(const char *device);       // default: best-guess from /proc/diskstats (first non-loop)
-int storage_set_testfile_dir(const char *dir);    // default: $TMPDIR or "/tmp"
+struct StorageManager {
+    // Config
+    char mount_path[256];
+    char device_name[64];
+    
+    // Data
+    Storage_capacity capacity;
+    Storage_perf perf;
+    Storage_io io;
 
-// Public API (standalone functions + also bound to function pointers inside struct)
-void get_storage_info(Storage_info *storage_info);
-void get_speed_and_iops_info(Storage_info *storage_info);
-void get_sectors_info(Storage_info *storage_info);
+    // --- Internal ---
+    void (*update_capacity)(void);
+    void (*update_io)(void);
+    void (*run_perf_test)(void); // Renamed for clarity
+};
+
+
+// --- Singleton Management API ---
+void storage_manager_destroy(void);
+StorageManager *storage_manager_create(void);
+
+// --- Public Data Update API ---
+void get_storage_info(StorageManager *manager);
+void get_io_info(StorageManager *manager);
+void run_storage_benchmark(StorageManager *manager); // Renamed
 
 #ifdef __cplusplus
 }

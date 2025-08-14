@@ -1,200 +1,120 @@
-
-#include <stdint.h>
+#include "memory.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "memory.h"
+#define PROC_MEMINFO_PATH "/proc/meminfo"
+
+static MemoryManager *g_memory_manager_instance = NULL;
+
+// --- Internal Function Implementations ---
+static void internal_update_stats(void);
+static void internal_update_top_processes(void);
 
 
-#ifndef TOP_N_PROC
-#define TOP_N_PROC 5
-#endif
+void memory_manager_destroy(void) {
+    if (g_memory_manager_instance) {
+        free(g_memory_manager_instance);
+        g_memory_manager_instance = NULL;
+    }
+}
 
-struct Cpu_process_info{
-    uint64_t pid;
-    char     name[256];
-    double   memory_usage;
-};
+MemoryManager *memory_manager_create(void) {
+    if (g_memory_manager_instance == NULL) {
+        g_memory_manager_instance = malloc(sizeof(MemoryManager));
+        if (!g_memory_manager_instance) {
+            perror("Failed to allocate memory for MemoryManager");
+            return NULL;
+        }
+        memset(g_memory_manager_instance, 0, sizeof(MemoryManager));
 
-struct Memory_info {
-    /* RAM */
-    uint64_t total_memory;   /* kB */
-    uint64_t free_memory;    /* kB */
-    uint64_t used_memory;    /* kB */
-
-    /* Swap */
-    uint64_t swap_total;     /* kB */
-    uint64_t swap_used;      /* kB */
-    uint64_t swap_free;      /* kB */
-
-    /* Cache/Buffers */
-    uint64_t cached_memory;  /* kB */
-    uint64_t buffers_memory; /* kB */
-
-    /* Top processes by RAM */
-    Cpu_process_info top[TOP_N_PROC];
-    int top_count;
-
-    /* Methods */
-    void (*get_memory_info)(struct Memory_info *memory_info);
-    void (*extract_process_info)(struct Memory_info *memory_info);
-    void (*get_processes_by_ram)(struct Memory_info *memory_info);
-};
+        // Assign internal methods
+        g_memory_manager_instance->update_stats = internal_update_stats;
+        g_memory_manager_instance->update_top_processes = internal_update_top_processes;
+    }
+    return g_memory_manager_instance;
+}
 
 
-static void mgr_get_memory_info(Memory_info *memory_info);
-static void mgr_extract_process_info(Memory_info *memory_info);
-static void mgr_get_processes_by_ram(Memory_info *memory_info);
+static void internal_update_stats(void) {
+    if (g_memory_manager_instance == NULL) return;
 
-static Memory_info Memory_info_instance;
-static int is_initialized = 0;
-
-static void mgr_get_memory_info(Memory_info *memory_info)
-{
-    if (!memory_info) return;
-
-    FILE *fp = fopen("/proc/meminfo", "r");
+    FILE *fp = fopen(PROC_MEMINFO_PATH, "r");
     if (!fp) {
-        perror("Failed to open /proc/meminfo");
+        perror("Failed to open " PROC_MEMINFO_PATH);
         return;
     }
 
     char line[256];
-    uint64_t mem_total = 0, mem_free = 0, mem_avail = 0;
-    uint64_t swap_total = 0, swap_free = 0;
-    uint64_t cached = 0, buffers = 0;
+    uint64_t mem_avail = 0;
+
+    // Reset values before reading
+    g_memory_manager_instance->total_kb = 0;
+    g_memory_manager_instance->free_kb = 0;
+    g_memory_manager_instance->swap_total_kb = 0;
+    g_memory_manager_instance->swap_free_kb = 0;
+    g_memory_manager_instance->cached_kb = 0;
+    g_memory_manager_instance->buffers_kb = 0;
 
     while (fgets(line, sizeof(line), fp)) {
-        if (strncmp(line, "MemTotal:", 9) == 0) {
-            sscanf(line, "MemTotal: %lu kB", &mem_total);
-        } else if (strncmp(line, "MemFree:", 8) == 0) {
-            sscanf(line, "MemFree: %lu kB", &mem_free);
-        } else if (strncmp(line, "MemAvailable:", 13) == 0) {
-            sscanf(line, "MemAvailable: %lu kB", &mem_avail);
-        } else if (strncmp(line, "SwapTotal:", 10) == 0) {
-            sscanf(line, "SwapTotal: %lu kB", &swap_total);
-        } else if (strncmp(line, "SwapFree:", 9) == 0) {
-            sscanf(line, "SwapFree: %lu kB", &swap_free);
-        } else if (strncmp(line, "Cached:", 7) == 0) {
-            sscanf(line, "Cached: %lu kB", &cached);
-        } else if (strncmp(line, "Buffers:", 8) == 0) {
-            sscanf(line, "Buffers: %lu kB", &buffers);
-        }
+        if (strncmp(line, "MemTotal:", 9) == 0) sscanf(line, "MemTotal: %lu kB", &g_memory_manager_instance->total_kb);
+        else if (strncmp(line, "MemFree:", 8) == 0) sscanf(line, "MemFree: %lu kB", &g_memory_manager_instance->free_kb);
+        else if (strncmp(line, "MemAvailable:", 13) == 0) sscanf(line, "MemAvailable: %lu kB", &mem_avail);
+        else if (strncmp(line, "SwapTotal:", 10) == 0) sscanf(line, "SwapTotal: %lu kB", &g_memory_manager_instance->swap_total_kb);
+        else if (strncmp(line, "SwapFree:", 9) == 0) sscanf(line, "SwapFree: %lu kB", &g_memory_manager_instance->swap_free_kb);
+        else if (strncmp(line, "Cached:", 7) == 0) sscanf(line, "Cached: %lu kB", &g_memory_manager_instance->cached_kb);
+        else if (strncmp(line, "Buffers:", 8) == 0) sscanf(line, "Buffers: %lu kB", &g_memory_manager_instance->buffers_kb);
     }
     fclose(fp);
 
-    memory_info->total_memory   = mem_total;
-    memory_info->free_memory    = mem_free;
-    memory_info->used_memory    = (mem_avail > 0 && mem_total > mem_avail) ? (mem_total - mem_avail) : (mem_total - mem_free);
-    memory_info->swap_total     = swap_total;
-    memory_info->swap_free      = swap_free;
-    memory_info->swap_used      = (swap_total >= swap_free) ? (swap_total - swap_free) : 0;
-    memory_info->cached_memory  = cached;
-    memory_info->buffers_memory = buffers;
+    g_memory_manager_instance->used_kb = (mem_avail > 0) 
+        ? (g_memory_manager_instance->total_kb - mem_avail) 
+        : (g_memory_manager_instance->total_kb - g_memory_manager_instance->free_kb);
+    g_memory_manager_instance->swap_used_kb = g_memory_manager_instance->swap_total_kb - g_memory_manager_instance->swap_free_kb;
 }
 
-static void mgr_extract_process_info(Memory_info *memory_info)
-{
-    (void)memory_info; 
-    
-    FILE *pipe = popen("ps -eo pid,comm,%mem --sort=-%mem | head -n 6", "r");
+static void internal_update_top_processes(void) {
+    if (g_memory_manager_instance == NULL) return;
+
+    // This command is inefficient but simple. For a real product, parsing /proc is better.
+    char command[256];
+    snprintf(command, sizeof(command), "ps -eo pid,comm,%%mem --sort=-%%mem | head -n %d", MEMORY_TOP_PROCESSES + 1);
+
+    FILE *pipe = popen(command, "r");
     if (!pipe) {
-        perror("Failed to run ps for RAM");
-        return;
-    }
-
-    FILE *out = fopen("/home/shunkun/top_ram.txt", "w");
-    if (!out) {
-        perror("Failed to open top_ram.txt");
-        pclose(pipe);
-        return;
-    }
-
-    char buf[256];
-    while (fgets(buf, sizeof(buf), pipe)) {
-        fputs(buf, out);
-    }
-
-    pclose(pipe);
-    fclose(out);
-}
-
-static void mgr_get_processes_by_ram(Memory_info *memory_info)
-{
-    if (!memory_info) return;
-
-    FILE *fp = fopen("/home/shunkun/top_ram.txt", "r");
-    if (!fp) {
-        perror("Failed to open top_ram.txt");
-        memory_info->top_count = 0;
+        perror("Failed to run ps command");
+        g_memory_manager_instance->top_process_count = 0;
         return;
     }
 
     char line[256];
-    int count = 0;
-
-    if (!fgets(line, sizeof(line), fp)) {
-        fclose(fp);
-        memory_info->top_count = 0;
+    // Skip header line
+    if (!fgets(line, sizeof(line), pipe)) {
+        pclose(pipe);
+        g_memory_manager_instance->top_process_count = 0;
         return;
     }
 
-    while (count < TOP_N_PROC && fgets(line, sizeof(line), fp)) {
-        unsigned long pid = 0;
-        double pmem = 0.0;
-        char name[256] = {0};
-
-        if (sscanf(line, "%lu %255s %lf", &pid, name, &pmem) == 3) {
-            memory_info->top[count].pid = (uint64_t)pid;
-            strncpy(memory_info->top[count].name, name, sizeof(memory_info->top[count].name)-1);
-            memory_info->top[count].name[sizeof(memory_info->top[count].name)-1] = '\0';
-            memory_info->top[count].memory_usage = pmem;
+    int count = 0;
+    while (count < MEMORY_TOP_PROCESSES && fgets(line, sizeof(line), pipe)) {
+        Process_mem_info *proc = &g_memory_manager_instance->top_processes[count];
+        if (sscanf(line, "%lu %63s %lf", &proc->pid, proc->name, &proc->usage_percent) == 3) {
             count++;
         }
     }
-
-    fclose(fp);
-    memory_info->top_count = count;
+    pclose(pipe);
+    g_memory_manager_instance->top_process_count = count;
 }
 
 
-Memory_info *Memory_info_init(void)
-{
-    if (!is_initialized) {
-         memset(&Memory_info_instance, 0, sizeof(Memory_info));
-        mem->get_memory_info      = mgr_get_memory_info;
-        mem->extract_process_info = mgr_extract_process_info;
-        mem->get_processes_by_ram = mgr_get_processes_by_ram;
+// --- Public API Implementations ---
 
-        is_initialized = 1;
-    }
-
-    return &Memory_info_instance;
+void memory_update_stats(MemoryManager *manager) {
+    if (manager == NULL) return;
+    manager->update_stats();
 }
 
-/* --------- Ví dụ sử dụng ----------
-int main(void)
-{
-    Memory_info mem;
-    memory_manager_init(&mem);
-
-    mem.get_memory_info(&mem);
-    printf("Total: %lu kB\n", mem.total_memory);
-    printf("Free : %lu kB\n", mem.free_memory);
-    printf("Used : %lu kB\n", mem.used_memory);
-    printf("Swap Total: %lu kB\n", mem.swap_total);
-    printf("Swap Used : %lu kB\n", mem.swap_used);
-    printf("Swap Free : %lu kB\n", mem.swap_free);
-    printf("Cached: %lu kB\n", mem.cached_memory);
-    printf("Buffers: %lu kB\n", mem.buffers_memory);
-
-    mem.extract_process_info(&mem);
-    mem.get_processes_by_ram(&mem);
-    for (int i = 0; i < mem.top_count; ++i) {
-        printf("PID: %lu, Name: %s, MEM: %.2f%%\n",
-               mem.top[i].pid, mem.top[i].name, mem.top[i].memory_usage);
-    }
-    return 0;
+void memory_update_top_processes(MemoryManager *manager) {
+    if (manager == NULL) return;
+    manager->update_top_processes();    
 }
-------------------------------------- */

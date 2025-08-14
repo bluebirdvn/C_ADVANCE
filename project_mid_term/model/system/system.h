@@ -1,30 +1,27 @@
 #ifndef SYSTEM_H_
 #define SYSTEM_H_
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <stdint.h>
+typedef struct SystemManager SystemManager;
 
-// Opaque singleton type
-typedef struct System_info System_info;
-
-// Data snapshots
+// --- Public Data Structures ---
 typedef struct {
-    uint64_t uptime_seconds;
     int days;
     int hours;
     int minutes;
 } System_uptime;
 
 typedef struct {
-    char iso_datetime[32]; // YYYY-MM-DD HH:MM:SS
+    char iso_datetime[32];
 } System_clock;
 
 typedef struct {
     char kernel_release[128];
-    char sysname[64];
     char machine[64];
 } System_kernel;
 
@@ -35,18 +32,35 @@ typedef struct {
 } System_load;
 
 typedef struct {
-    uint32_t process_count; // number of running processes (count /proc numeric entries)
+    uint32_t process_count;
 } System_proc;
 
-// Singleton accessor
-System_info *system_info_instance(void);
 
-// Public API (also available as function pointers inside the singleton)
-void get_up_time(System_info *si);
-void get_system_time(System_info *si);
-void get_kernel_version(System_info *si);
-void service_info(System_info *si);
-void load_average(System_info *si);
+struct SystemManager {
+    System_uptime uptime;
+    System_clock clock;
+    System_kernel kernel;
+    System_load load;
+    System_proc proc;
+
+    // --- Internal ---
+    void (*update_uptime)(void);
+    void (*update_time)(void);
+    void (*update_kernel)(void);
+    void (*update_load_avg)(void);
+    void (*update_proc_count)(void);
+};
+
+// --- Singleton API ---
+void system_manager_destroy(void);
+SystemManager *system_manager_create(void);
+
+// --- Public Data Update API ---
+void system_update_uptime(SystemManager *manager);
+void system_update_time(SystemManager *manager);
+void system_update_kernel_info(SystemManager *manager);
+void system_update_load_average(SystemManager *manager);
+void system_update_process_count(SystemManager *manager);
 
 #ifdef __cplusplus
 }

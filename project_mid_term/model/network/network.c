@@ -1,296 +1,228 @@
 #include "network.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <time.h>
-#include <errno.h>
 #include <ifaddrs.h>
 #include <arpa/inet.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
+#include <net/if.h>
 
-// --- Internal constants ---
-#define NET_MAX_IFS 10
-#define DEFAULT_ROUTE_FILE "/proc/net/route"
-#define PROC_TCP "/proc/net/tcp"
-#define PROC_UDP "/proc/net/udp"
+static NetworkManager* g_network_instance = NULL;
 
-// --- Internal struct definition ---
-struct Network_info {
-    // State
-    char primary_ifname[64];
+// --- Internal Function Declarations ---
+static void network_update_bytes(void);
+static void network_update_speed(void);
+static void network_update_connections(void);
+static void network_update_interface_info(void);
+static int read_u64_from_sysfs(const char* path, uint64_t* out);
+static int read_str_from_sysfs(const char* path, char* buf, size_t buflen);
 
-    // Data
-    Network_speed_info speed_info;
-    double bandwidth_usage_tx; // 0..1
-    double bandwidth_usage_rx; // 0..1
-    uint64_t latency_ms;       // not measured in this sample
-    Network_packet_info packet_info;
-    Network_connection_info connection_info;
-    Network_interface_info interface_info[NET_MAX_IFS];
 
-    // Methods (function pointers)
-    void (*get_tx_rx_info)(Network_info *);
-    void (*get_network_speed)(Network_info *);
-    void (*get_bandwidth_usage)(Network_info *);
-    void (*get_packet_info)(Network_info *);
-    int  (*get_connection_info)(Network_info *);
-    int  (*get_network_interface_info)(Network_info *);
-};
-
-// --- Singleton instance ---
-static Network_info g_inst;
-static int g_inited = 0;
-
-// --- Helpers ---
-static int read_uint64_from_file(const char *path, uint64_t *out) {
-    FILE *f = fopen(path, "r");
-    if (!f) return -1; // caller prints errno context
-    unsigned long long v = 0ULL; // why: fscanf with %llu is portable for uint64_t
-    int n = fscanf(f, "%llu", &v);
-    fclose(f);
-    if (n != 1) return -2;
-    *out = (uint64_t)v;
-    return 0;
+void network_manager_destroy(void) {
+    if (g_network_instance) {
+        free(g_network_instance);
+        g_network_instance = NULL;
+    }
 }
 
-static int read_uint32_from_file(const char *path, uint32_t *out) {
-    FILE *f = fopen(path, "r");
-    if (!f) return -1;
-    unsigned int v = 0U;
-    int n = fscanf(f, "%u", &v);
-    fclose(f);
-    if (n != 1) return -2;
-    *out = (uint32_t)v;
-    return 0;
+NetworkManager* network_manager_create() {
+    if (g_network_instance == NULL) {
+        g_network_instance = (NetworkManager*)calloc(1, sizeof(NetworkManager));
+        if (!g_network_instance) {
+            perror("Failed to allocate memory for NetworkManager");
+            return NULL;
+        }
+
+        g_network_instance->update_bytes = network_update_bytes;
+        g_network_instance->update_speed = network_update_speed;
+        g_network_instance->update_connections = network_update_connections;
+        g_network_instance->update_interface_info = network_update_interface_info;
+
+        // Try to find the default interface from /proc/net/route
+        FILE* file = fopen("/proc/net/route", "r");
+        if (file) {
+            char line[256], iface[32], dest[32];
+            fgets(line, sizeof(line), file); // skip header
+            while (fgets(line, sizeof(line), file)) {
+                if (sscanf(line, "%31s %31s", iface, dest) == 2) {
+                    if (strcmp(dest, "00000000") == 0) { // default route
+                        strncpy(g_network_instance->interface_name, iface, sizeof(g_network_instance->interface_name)-1);
+                        break;
+                    }
+                }
+            }
+            fclose(file);
+        }
+        // Fallback if not found
+        if (g_network_instance->interface_name[0] == '\0') {
+            strcpy(g_network_instance->interface_name, "eth0");
+        }
+
+        // Get baseline counters + timestamp for speed calculation
+        g_network_instance->update_bytes();
+        clock_gettime(CLOCK_MONOTONIC, &g_network_instance->last_ts);
+        g_network_instance->prev_rx_bytes = g_network_instance->rx_bytes;
+        g_network_instance->prev_tx_bytes = g_network_instance->tx_bytes;
+    }
+    return g_g_network_instance;
 }
 
-static void build_stat_path(char *buf, size_t bufsz, const char *ifname, const char *statfile) {
-    // /sys/class/net/<if>/statistics/<statfile>
-    snprintf(buf, bufsz, "/sys/class/net/%s/statistics/%s", ifname, statfile);
+static void network_update_bytes(void) 
+{
+    if (!g_g_network_instance) return;
+    char path[256];
+    const char* ifn = g_g_network_instance->interface_name;
+
+    // bytes
+    snprintf(path, sizeof(path), "/sys/class/net/%s/statistics/rx_bytes", ifn);
+    (void)read_u64_from_sysfs(path, &g_network_instance->rx_bytes);
+    snprintf(path, sizeof(path), "/sys/class/net/%s/statistics/tx_bytes", ifn);
+    (void)read_u64_from_sysfs(path, &g_network_instance->tx_bytes);
+
+    // packets
+    snprintf(path, sizeof(path), "/sys/class/net/%s/statistics/rx_packets", ifn);
+    (void)read_u64_from_sysfs(path, &g_network_instance->rx_packets);
+    snprintf(path, sizeof(path), "/sys/class/net/%s/statistics/tx_packets", ifn);
+    (void)read_u64_from_sysfs(path, &g_network_instance->tx_packets);
+
+    // errors & dropped
+    snprintf(path, sizeof(path), "/sys/class/net/%s/statistics/rx_errors", ifn);
+    (void)read_u64_from_sysfs(path, &g_network_instance->rx_errs);
+    snprintf(path, sizeof(path), "/sys/class/net/%s/statistics/tx_errors", ifn);
+    (void)read_u64_from_sysfs(path, &g_network_instance->tx_errs);
+
+    snprintf(path, sizeof(path), "/sys/class/net/%s/statistics/rx_dropped", ifn);
+    (void)read_u64_from_sysfs(path, &g_network_instance->rx_dropped);
+    snprintf(path, sizeof(path), "/sys/class/net/%s/statistics/tx_dropped", ifn);
+    (void)read_u64_from_sysfs(path, &g_network_instance->tx_dropped);
 }
 
-static void build_if_path(char *buf, size_t bufsz, const char *ifname, const char *file) {
-    // /sys/class/net/<if>/<file>
-    snprintf(buf, bufsz, "/sys/class/net/%s/%s", ifname, file);
-}
+static void network_update_speed(void) 
+{
+    if (!g_network_instance) return;
 
-static int find_default_interface(char *out, size_t outsz) {
-    // why: picking interface from default route is more robust than hardcoding
-    FILE *f = fopen(DEFAULT_ROUTE_FILE, "r");
-    if (!f) return -1;
-    char line[256];
-    // skip header
-    if (!fgets(line, sizeof(line), f)) { fclose(f); return -1; }
-    while (fgets(line, sizeof(line), f)) {
-        // Fields: Iface Destination Gateway Flags RefCnt Use Metric Mask ...
-        // Default route has Destination == 00000000
-        char iface[64];
-        char destination[64];
-        if (sscanf(line, "%63s %63s", iface, destination) == 2) {
-            if (strcmp(destination, "00000000") == 0) {
-                strncpy(out, iface, outsz - 1);
-                out[outsz - 1] = '\0';
-                fclose(f);
-                return 0;
+    struct timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+
+    if (g_network_instance->last_ts.tv_sec != 0 || g_network_instance->last_ts.tv_nsec != 0) {
+        double dt = (now.tv_sec - g_network_instance->last_ts.tv_sec)
+                  + (now.tv_nsec - g_network_instance->last_ts.tv_nsec) / 1e9;
+        if (dt > 0) {
+            uint64_t drx = (g_network_instance->rx_bytes >= g_network_instance->prev_rx_bytes)
+                         ? (g_network_instance->rx_bytes - g_network_instance->prev_rx_bytes) : 0;
+            uint64_t dtx = (g_network_instance->tx_bytes >= g_network_instance->prev_tx_bytes)
+                         ? (g_network_instance->tx_bytes - g_network_instance->prev_tx_bytes) : 0;
+
+            uint64_t dprx = (g_network_instance->rx_packets >= g_network_instance->prev_rx_packets)
+                          ? (g_network_instance->rx_packets - g_network_instance->prev_rx_packets) : 0;
+            uint64_t dptx = (g_network_instance->tx_packets >= g_network_instance->prev_tx_packets)
+                          ? (g_network_instance->tx_packets - g_network_instance->prev_tx_packets) : 0;
+
+            // kbps = (bytes * 8) / dt / 1000
+            g_network_instance->rx_speed_kbps = (double)drx * 8.0 / dt / 1000.0;
+            g_network_instance->tx_speed_kbps = (double)dtx * 8.0 / dt / 1000.0;
+
+            // pps
+            g_network_instance->rx_pps = (double)dprx / dt;
+            g_network_instance->tx_pps = (double)dptx / dt;
+
+            // % sử dụng băng thông nếu biết speed_mbps
+            if (g_network_instance->speed_mbps > 0) {
+                double max_kbps = (double)g_network_instance->speed_mbps * 1000.0;
+                g_network_instance->rx_util_percent = (g_network_instance->rx_speed_kbps / max_kbps) * 100.0;
+                g_network_instance->tx_util_percent = (g_network_instance->tx_speed_kbps / max_kbps) * 100.0;
+                if (g_network_instance->rx_util_percent < 0) g_network_instance->rx_util_percent = 0;
+                if (g_network_instance->tx_util_percent < 0) g_network_instance->tx_util_percent = 0;
+            } else {
+                g_network_instance->rx_util_percent = 0;
+                g_network_instance->tx_util_percent = 0;
             }
         }
     }
-    fclose(f);
-    return -1;
+
+    // cập nhật prev + timestamp
+    g_network_instance->prev_rx_bytes = g_network_instance->rx_bytes;
+    g_network_instance->prev_tx_bytes = g_network_instance->tx_bytes;
+    g_network_instance->prev_rx_packets = g_network_instance->rx_packets;
+    g_network_instance->prev_tx_packets = g_network_instance->tx_packets;
+    g_network_instance->last_ts = now;
 }
 
-static void choose_fallback_interface(char *out, size_t outsz) {
-    const char *candidates[] = {"eth0", "ens33", "enp0s3", "wlan0", "lo"};
-    for (size_t i = 0; i < sizeof(candidates)/sizeof(candidates[0]); ++i) {
-        char path[256];
-        build_if_path(path, sizeof(path), candidates[i], "operstate");
-        FILE *f = fopen(path, "r");
-        if (f) { fclose(f); strncpy(out, candidates[i], outsz - 1); out[outsz-1] = '\0'; return; }
-    }
-    // last resort
-    strncpy(out, "lo", outsz - 1);
-    out[outsz - 1] = '\0';
+static void network_update_connections(void) 
+{
+    if (!g_network_instance) return;
+    int total = 0, est = 0;
+    count_tcp_from_file("/proc/net/tcp",  &total, &est);
+    count_tcp_from_file("/proc/net/tcp6", &total, &est);
+    g_network_instance->tcp_connections_total = total;
+    g_network_instance->tcp_connections_established = est;
 }
 
-static void ensure_initialized(void) {
-    if (g_inited) return;
-    memset(&g_inst, 0, sizeof(g_inst));
+static void network_update_interface_info(void) {
+    if (!g_network_instance) return;
+    char path[256], buf[64];
+    const char* ifn = g_network_instance->interface_name;
 
-    // Bind methods
-    g_inst.get_tx_rx_info = get_tx_rx_info;
-    g_inst.get_network_speed = get_network_speed;
-    g_inst.get_bandwidth_usage = get_bandwidth_usage;
-    g_inst.get_packet_info = get_packet_info;
-    g_inst.get_connection_info = get_connection_info;
-    g_inst.get_network_interface_info = get_network_interface_info;
-
-    // Resolve primary interface
-    if (find_default_interface(g_inst.primary_ifname, sizeof(g_inst.primary_ifname)) != 0) {
-        choose_fallback_interface(g_inst.primary_ifname, sizeof(g_inst.primary_ifname));
+    // operstate
+    snprintf(path, sizeof(path), "/sys/class/net/%s/operstate", ifn);
+    if (read_str_from_sysfs(path, buf, sizeof(buf)) == 0) {
+        g_network_instance->link_up = (strcmp(buf, "up") == 0) ? 1 : 0;
+    } else {
+        g_network_instance->link_up = 0;
     }
 
-    g_inited = 1;
+    // mtu
+    snprintf(path, sizeof(path), "/sys/class/net/%s/mtu", ifn);
+    (void)read_u32_from_sysfs(path, &g_network_instance->mtu);
+
+    // speed (Mbps), return 0 or -1 (unknow)
+    uint32_t sp = 0;
+    snprintf(path, sizeof(path), "/sys/class/net/%s/speed", ifn);
+    if (read_u32_from_sysfs(path, &sp) == 0 && sp != (uint32_t)-1) {
+        g_network_instance->speed_mbps = sp;
+    } else {
+        g_network_instance->speed_mbps = 0; // unknown
+    }
 }
 
-// --- Singleton API ---
-Network_info *network_info_instance(void) {
-    ensure_initialized();
-    return &g_inst;
-}
-
-int network_set_interface(const char *ifname) {
-    ensure_initialized();
-    if (!ifname || !*ifname) return -1;
-    // quick validate existence
-    char path[256];
-    build_if_path(path, sizeof(path), ifname, "operstate");
-    FILE *f = fopen(path, "r");
-    if (!f) return -2; // why: avoid storing non-existent interface name
+static int read_u64_from_sysfs(const char* path, uint64_t* out) 
+{
+    FILE* f = fopen(path, "r");
+    if (!f) return -1;
+    if (fscanf(f, "%lu", (unsigned long*)out) != 1) { fclose(f); return -1; }
     fclose(f);
-    strncpy(g_inst.primary_ifname, ifname, sizeof(g_inst.primary_ifname) - 1);
-    g_inst.primary_ifname[sizeof(g_inst.primary_ifname) - 1] = '\0';
     return 0;
 }
 
-const char *network_get_interface(void) {
-    ensure_initialized();
-    return g_inst.primary_ifname;
-}
-
-// --- Implementations ---
-void get_tx_rx_info(Network_info *network_info) {
-    ensure_initialized();
-    (void)network_info; // singleton state stored in g_inst
-    char path[256];
-    uint64_t v = 0;
-
-    build_stat_path(path, sizeof(path), g_inst.primary_ifname, "rx_bytes");
-    if (read_uint64_from_file(path, &v) == 0) g_inst.speed_info.rx_bytes = v; else perror(path);
-
-    build_stat_path(path, sizeof(path), g_inst.primary_ifname, "tx_bytes");
-    if (read_uint64_from_file(path, &v) == 0) g_inst.speed_info.tx_bytes = v; else perror(path);
-}
-
-void get_network_speed(Network_info *network_info) {
-    ensure_initialized();
-    (void)network_info;
-
-    struct timespec t0, t1;
-    get_tx_rx_info(&g_inst);
-    uint64_t tx0 = g_inst.speed_info.tx_bytes;
-    uint64_t rx0 = g_inst.speed_info.rx_bytes;
-
-    if (clock_gettime(CLOCK_MONOTONIC, &t0) != 0) memset(&t0, 0, sizeof(t0));
-    sleep(1);
-    get_tx_rx_info(&g_inst);
-    if (clock_gettime(CLOCK_MONOTONIC, &t1) != 0) memset(&t1, 0, sizeof(t1));
-
-    double dt = (t1.tv_sec - t0.tv_sec) + (t1.tv_nsec - t0.tv_nsec)/1e9;
-    if (dt <= 0) dt = 1.0; // why: avoid divide-by-zero if clock fails
-
-    g_inst.speed_info.upload_speed_kBps = (double)(g_inst.speed_info.tx_bytes - tx0) / dt / 1024.0;
-    g_inst.speed_info.download_speed_kBps = (double)(g_inst.speed_info.rx_bytes - rx0) / dt / 1024.0;
-}
-
-void get_bandwidth_usage(Network_info *network_info) {
-    ensure_initialized();
-    (void)network_info;
-
-    // /sys/class/net/<if>/speed returns Mbps
-    char path[256];
-    build_if_path(path, sizeof(path), g_inst.primary_ifname, "speed");
-    uint32_t mbps = 0;
-    if (read_uint32_from_file(path, &mbps) != 0 || mbps == 0U) {
-        // Unknown link speed -> mark usage as 0, but keep values measurable
-        g_inst.bandwidth_usage_tx = 0.0;
-        g_inst.bandwidth_usage_rx = 0.0;
-        return;
-    }
-    // Convert KB/s to Mb/s: KB/s * 8 / 1024
-    double up_mbps = g_inst.speed_info.upload_speed_kBps * 8.0 / 1024.0;
-    double down_mbps = g_inst.speed_info.download_speed_kBps * 8.0 / 1024.0;
-    g_inst.bandwidth_usage_tx = up_mbps / (double)mbps;
-    g_inst.bandwidth_usage_rx = down_mbps / (double)mbps;
-}
-
-void get_packet_info(Network_info *network_info) {
-    ensure_initialized();
-    (void)network_info;
-    char path[256];
-    uint64_t v = 0;
-
-    build_stat_path(path, sizeof(path), g_inst.primary_ifname, "rx_packets");
-    if (read_uint64_from_file(path, &v) == 0) g_inst.packet_info.packet_rx = v; else perror(path);
-
-    build_stat_path(path, sizeof(path), g_inst.primary_ifname, "tx_packets");
-    if (read_uint64_from_file(path, &v) == 0) g_inst.packet_info.packet_tx = v; else perror(path);
-
-    build_stat_path(path, sizeof(path), g_inst.primary_ifname, "rx_errors");
-    if (read_uint64_from_file(path, &v) == 0) g_inst.packet_info.rx_errors = v; else perror(path);
-
-    build_stat_path(path, sizeof(path), g_inst.primary_ifname, "tx_errors");
-    if (read_uint64_from_file(path, &v) == 0) g_inst.packet_info.tx_errors = v; else perror(path);
-
-    build_stat_path(path, sizeof(path), g_inst.primary_ifname, "rx_dropped");
-    if (read_uint64_from_file(path, &v) == 0) g_inst.packet_info.rx_dropped = v; else perror(path);
-
-    build_stat_path(path, sizeof(path), g_inst.primary_ifname, "tx_dropped");
-    if (read_uint64_from_file(path, &v) == 0) g_inst.packet_info.tx_dropped = v; else perror(path);
-}
-
-#define TCP_ESTABLISHED "01"
-#define UDP_LISTENING   "07"
-
-static int count_states_in_proc(const char *path, const char *state_hex) {
-    FILE *f = fopen(path, "r");
-    if (!f) { perror(path); return -1; }
-    char buf[512];
-    int count = 0;
-    if (!fgets(buf, sizeof(buf), f)) { fclose(f); return -1; }
-    while (fgets(buf, sizeof(buf), f)) {
-        char local[64], rem[64], st[8];
-        // idx: sl local_address rem_address st ...
-        if (sscanf(buf, "%*d: %63s %63s %2s", local, rem, st) == 3) {
-            if (strncmp(st, state_hex, 2) == 0) count++;
-        }
-    }
+static int read_str_from_sysfs(const char* path, char* buf, size_t buflen) {
+    FILE* f = fopen(path, "r");
+    if (!f) return -1;
+    if (!fgets(buf, buflen, f)) { fclose(f); return -1; }
     fclose(f);
-    return count;
+    // strip newline
+    size_t n = strlen(buf);
+    if (n && buf[n-1] == '\n') buf[n-1] = '\0';
+    return 0;
 }
 
-int get_connection_info(Network_info *network_info) {
-    ensure_initialized();
-    (void)network_info;
-    int tcp = count_states_in_proc(PROC_TCP, TCP_ESTABLISHED);
-    int udp = count_states_in_proc(PROC_UDP, UDP_LISTENING);
-    if (tcp < 0) tcp = 0; if (udp < 0) udp = 0;
-    g_inst.connection_info.total_tcp_connections = (uint32_t)tcp;
-    g_inst.connection_info.total_udp_sockets = (uint32_t)udp;
-    return tcp; // keep return similar to original (tcp count)
+
+// --- Public API Implementations ---
+void get_bytes(NetworkManager *manager) {
+    if (!manager) return;
+    manager->update_bytes();
 }
 
-int get_network_interface_info(Network_info *network_info) {
-    ensure_initialized();
-    (void)network_info;
+void get_speed(NetworkManager *manager) {
+    if (!manager) return;
+    manager->update_speed();    
+}
 
-    struct ifaddrs *ifaddr = NULL, *ifa = NULL;
-    if (getifaddrs(&ifaddr) == -1) {
-        perror("getifaddrs");
-        return -1;
-    }
-    int count = 0;
-    for (ifa = ifaddr; ifa != NULL && count < NET_MAX_IFS; ifa = ifa->ifa_next) {
-        if (!ifa->ifa_addr || ifa->ifa_addr->sa_family != AF_INET) continue;
-        struct sockaddr_in *sa = (struct sockaddr_in *)ifa->ifa_addr;
-        const char *ip = inet_ntop(AF_INET, &(sa->sin_addr), g_inst.interface_info[count].ip_address, sizeof(g_inst.interface_info[count].ip_address));
-        if (!ip) continue;
-        strncpy(g_inst.interface_info[count].interface_name, ifa->ifa_name, sizeof(g_inst.interface_info[count].interface_name)-1);
-        g_inst.interface_info[count].interface_name[sizeof(g_inst.interface_info[count].interface_name)-1] = '\0';
-        count++;
-    }
-    freeifaddrs(ifaddr);
-    return count;
+void get_connections(NetworkManager *manager) {
+    if (!manager) return;
+    manager->update_connections();     
+}
+
+void get_interface_info(NetworkManager *manager) {
+    if (!manager) return;
+    manager->update_interface_info();
 }
