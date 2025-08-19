@@ -86,7 +86,6 @@ static void update_cpu_times(void)
                            &vals[0], &vals[1], &vals[2], &vals[3],
                            &vals[4], &vals[5], &vals[6], &vals[7]);
                 } else { // For "cpuN", we parse with the core number
-                    // MODIFIED: Correctly ignore the core number in sscanf
                     sscanf(line, "cpu%*u %llu %llu %llu %llu %llu %llu %llu %llu",
                            &vals[0], &vals[1], &vals[2], &vals[3],
                            &vals[4], &vals[5], &vals[6], &vals[7]);
