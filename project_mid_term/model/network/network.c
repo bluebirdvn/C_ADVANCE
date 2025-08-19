@@ -140,7 +140,6 @@ static void network_update_speed(void)
         }
     }
 
-    // cập nhật prev + timestamp
     g_network_instance->prev_rx_bytes = g_network_instance->rx_bytes;
     g_network_instance->prev_tx_bytes = g_network_instance->tx_bytes;
     g_network_instance->prev_rx_packets = g_network_instance->rx_packets;
