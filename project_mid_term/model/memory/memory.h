@@ -9,7 +9,6 @@ extern "C" {
 
 #define MEMORY_TOP_PROCESSES 5
 
-// Forward declaration for opaque pointer
 typedef struct MemoryManager MemoryManager;
 
 // --- Data Structures for public access ---
@@ -45,11 +44,8 @@ struct MemoryManager {
 
 
 // --- Singleton Management API ---
-
-// NEW: Destructor to free the singleton instance
 void memory_manager_destroy(void);
 
-// MODIFIED: Renamed to create() for consistency
 MemoryManager *memory_manager_create(void);
 
 
