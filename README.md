@@ -1,4 +1,4 @@
-# 🎯 Design Patterns, System Simulation & Utility Modules in C/C++
+# Design Patterns, System Simulation & Utility Modules in C/C++
 
 ## 📌 Giới thiệu
 
@@ -10,7 +10,7 @@
 
 ---
 
-## 🗂️ Cấu trúc thư mục
+## Cấu trúc thư mục
 
 | Thư mục                     | Mô tả ngắn                                                                 |
 |-----------------------------|----------------------------------------------------------------------------|
@@ -24,24 +24,24 @@
 
 ---
 
-## 📚 Chi tiết các thành phần
+## Chi tiết các thành phần
 
-### 🔧 1. Logger I/O (`logger_IO/`)
+### 1. Logger I/O (`logger_IO/`)
 - Ghi log theo nhiều cấp độ: DEBUG, INFO, ERROR, ...
 - Ghi đồng thời ra `stdout/stderr` và file `.log`
 - Macro tiện lợi, có thể tái sử dụng cho các project C bất kỳ.
 
-### 🏛️ 2. Library Management (`Library_Management/`)
+### 2. Library Management (`Library_Management/`)
 - Quản lý sách, người mượn, lịch sử mượn/trả.
 - Dữ liệu có thể lưu trữ và nạp lại từ file.
 - Cấu trúc module rõ ràng (UI, data, xử lý).
-
-### 🌿 3. SPWS System Simulation (`SPWS_SYSTEM_SIMULATION/`)
+- 
+### 3. SPWS System Simulation (`SPWS_SYSTEM_SIMULATION/`)
 - Mô phỏng hệ thống tưới cây thông minh.
 - Bao gồm cảm biến ảo, phản hồi người dùng, và hành vi tự động.
 - Có thể mở rộng để tích hợp với hệ thống IoT thật.
 
-### 🧱 4. Design Patterns
+### 4. Design Patterns
 #### ➤ `Behavioral_Pattern/`
 - **Observer** – Theo dõi sự kiện.
 - **Strategy** – Đổi thuật toán tại runtime.
@@ -61,9 +61,9 @@
 
 ---
 
-## 💻 Cách build & chạy
+## Cách build & chạy
 
-> ⚙️ Hầu hết module dùng CMake hoặc Makefile riêng trong thư mục con.
+> Hầu hết module dùng CMake hoặc Makefile riêng trong thư mục con.
 
 ```bash
 cd logger_IO
@@ -71,7 +71,7 @@ make
 ./main
 
 
-🧠 Kiến thức áp dụng
+Kiến thức áp dụng
 Cấu trúc phần mềm với Design Patterns.
 
 Lập trình hướng đối tượng và hướng mô-đun (C/C++)
@@ -83,7 +83,7 @@ Mô phỏng hệ thống nhúng/IoT đơn giản.
 Tái sử dụng mã nguồn qua cấu trúc rõ ràng, linh hoạt.
 
 
-🎯 Mục tiêu học tập
+Mục tiêu học tập
 ✔️ Hiểu và áp dụng các mẫu thiết kế chuẩn
 ✔️ Viết mã rõ ràng, mô-đun, tái sử dụng cao
 ✔️ Xây dựng các module tiện ích áp dụng được cho nhiều dự án C/C++ khác
