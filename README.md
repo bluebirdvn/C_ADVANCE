@@ -1,6 +1,6 @@
 # Design Patterns, System Simulation & Utility Modules in C/C++
 
-## 📌 Giới thiệu
+## Giới thiệu
 
 Đây là một repository tổng hợp nhiều **mẫu thiết kế phần mềm (Design Patterns)**, các **mô-đun tiện ích**, và một **mô phỏng hệ thống thực tế** được viết bằng ngôn ngữ C/C++. Mục tiêu là giúp bạn:
 
